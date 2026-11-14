@@ -18,50 +18,55 @@ export const Header: React.FC<HeaderProps> = ({
   showDemoBar = true,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
       {/* Reviewer Quick-Switch Demo Bar */}
       {showDemoBar && (
-        <div className="bg-slate-900 text-slate-100 px-4 py-2 text-xs">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-emerald-400 uppercase tracking-wider">
-                Demo Access:
+        <div className="bg-slate-900 text-slate-100 px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="font-semibold text-emerald-400 uppercase tracking-wider text-[10px] sm:text-xs shrink-0">
+                Demo:
               </span>
-              <span className="text-slate-300">
+              <span className="text-slate-300 hidden md:inline truncate">
                 One-click role switching to evaluate Role-Based Access Control (RBAC):
+              </span>
+              <span className="text-slate-300 md:hidden text-[11px] truncate">
+                Switch demo role:
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => onLoginDemo('HR_ADMIN')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
                   user?.role === 'HR_ADMIN'
                     ? 'bg-blue-600 text-white ring-2 ring-blue-400'
                     : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                <span>Admin (HR_ADMIN)</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span className="sm:hidden">Admin</span>
+                <span className="hidden sm:inline">Admin (HR_ADMIN)</span>
                 {user?.role === 'HR_ADMIN' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 ml-1" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 ml-0.5 sm:ml-1 shrink-0" />
                 )}
               </button>
 
               <button
                 onClick={() => onLoginDemo('HR_VIEWER')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition-colors ${
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
                   user?.role === 'HR_VIEWER'
                     ? 'bg-amber-600 text-white ring-2 ring-amber-400'
                     : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5 text-amber-300" />
-                <span>Viewer (HR_VIEWER)</span>
+                <Eye className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <span className="sm:hidden">Viewer</span>
+                <span className="hidden sm:inline">Viewer (HR_VIEWER)</span>
                 {user?.role === 'HR_VIEWER' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 ml-1" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 ml-0.5 sm:ml-1 shrink-0" />
                 )}
               </button>
 
@@ -69,8 +74,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onLogout}
                   disabled={isLoading}
-                  title="Log out"
-                  className="ml-2 text-slate-400 hover:text-rose-400 transition-colors p-1"
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className="text-slate-400 hover:text-rose-400 transition-colors p-1 rounded-md hover:bg-slate-800"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -81,30 +87,33 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
-            <Building2 className="w-5 h-5" />
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
+        {/* Brand / Logo */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="bg-blue-600 text-white p-1.5 sm:p-2 rounded-lg shadow-xs shrink-0">
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-900 leading-tight">
-              ACME Global Compensation
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-base font-bold text-slate-900 leading-tight truncate">
+              ACME <span className="hidden xs:inline">Global </span>Compensation
             </h1>
-            <p className="text-xs text-slate-500">
-              Multi-Currency Intelligence & Transactional Audit Trail
+            <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block truncate">
+              Multi-Currency Intelligence &amp; Transactional Audit Trail
             </p>
           </div>
         </div>
 
         {/* User Status Badge */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full text-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-medium text-slate-700">{user.name}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="font-medium text-slate-700 max-w-[70px] xs:max-w-[110px] sm:max-w-none truncate text-[11px] sm:text-xs">
+                  {user.name}
+                </span>
                 <span
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                  className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold shrink-0 ${
                     user.role === 'HR_ADMIN'
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-amber-100 text-amber-700'
@@ -117,7 +126,8 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onLogout}
                 disabled={isLoading}
                 title="Sign out"
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
+                aria-label="Sign out"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
               >
                 <LogOut className="w-4 h-4" />
               </button>
