@@ -39,11 +39,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onLoginDemo('HR_ADMIN')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
-                  user?.role === 'HR_ADMIN'
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                }`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${user?.role === 'HR_ADMIN'
+                  ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span className="sm:hidden">Admin</span>
@@ -56,11 +55,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onLoginDemo('HR_VIEWER')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
-                  user?.role === 'HR_VIEWER'
-                    ? 'bg-amber-600 text-white ring-2 ring-amber-400'
-                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                }`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${user?.role === 'HR_VIEWER'
+                  ? 'bg-amber-600 text-white ring-2 ring-amber-400'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  }`}
               >
                 <Eye className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                 <span className="sm:hidden">Viewer</span>
@@ -107,18 +105,9 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {user ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="font-medium text-slate-700 max-w-[70px] xs:max-w-[110px] sm:max-w-none truncate text-[11px] sm:text-xs">
-                  {user.name}
-                </span>
-                <span
-                  className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold shrink-0 ${
-                    user.role === 'HR_ADMIN'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-amber-100 text-amber-700'
-                  }`}
-                >
+                <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">
                   {user.role}
                 </span>
               </div>
