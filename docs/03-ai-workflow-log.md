@@ -87,3 +87,6 @@ Following the initial MVP deployment, iterative reviewer interaction drove four 
    * *Modal Input Reset:* Added automated state clearing (`resetForm()`) to `AddEmployeeModal` upon successful employee onboarding and modal dismiss, ensuring clean input fields without residual state.
    * *Dynamic Table Height:* Removed fixed `min-h-[360px]` and adjusted skeleton count to match active record counts, eliminating artificial empty whitespace after search queries and selective filters.
    * *Custom Deactivation Modal:* Built `DeactivateEmployeeModal` replacing native browser `window.confirm`, providing full employee context (name, ID, title, salary) and regulatory compliance notices (ADR-06 soft-deletion).
+6. **Country Analytics Aggregation Normalization:**
+   * *Issue:* Decoupling country from currency (allowing cross-border contracts) caused `GET /api/analytics/by-country` to return repetitive country entries because the SQL query previously grouped by `(country, currency)`.
+   * *Fix:* Updated `AnalyticsService.getByCountry()` to group strictly by `country` with `MODE() WITHIN GROUP (ORDER BY currency) AS "currency"`, producing exactly 1 unified aggregation per global operating territory.

@@ -139,13 +139,13 @@ export class AnalyticsService {
     const raw = await this.dataSource.query(`
       SELECT 
         country,
-        currency,
+        MODE() WITHIN GROUP (ORDER BY currency) AS "currency",
         COUNT(*)::int AS "headcount",
         COALESCE(SUM(base_salary_usd_minor), 0)::bigint AS "totalUsdMinor",
         COALESCE(AVG(base_salary_usd_minor), 0)::bigint AS "avgUsdMinor"
       FROM employees
       WHERE is_active = true
-      GROUP BY country, currency
+      GROUP BY country
       ORDER BY "totalUsdMinor" DESC;
     `);
 
