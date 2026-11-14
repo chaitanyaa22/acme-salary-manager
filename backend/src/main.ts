@@ -9,8 +9,12 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security Middleware
-  app.use(helmet());
+  // Security Middleware (CSP disabled for Swagger UI compatibility)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    }),
+  );
   app.enableCors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
