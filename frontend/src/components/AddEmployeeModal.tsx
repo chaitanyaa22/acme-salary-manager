@@ -32,17 +32,6 @@ const FX_RATES_TO_USD: Record<CurrencyCode, number> = {
   INR: 0.012,
 };
 
-const DEFAULT_JOB_TITLES: Record<string, string> = {
-  Engineering: 'Software Engineer',
-  Product: 'Product Manager',
-  Design: 'Product Designer',
-  Sales: 'Account Executive',
-  Marketing: 'Marketing Specialist',
-  'Human Resources': 'HR Business Partner',
-  Finance: 'Financial Analyst',
-  Operations: 'Operations Coordinator',
-};
-
 export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   isOpen,
   onClose,
@@ -52,11 +41,11 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [country, setCountry] = useState<string>('United States');
-  const [department, setDepartment] = useState<string>('Engineering');
-  const [level, setLevel] = useState<string>('L3');
-  const [jobTitle, setJobTitle] = useState('Senior Software Engineer');
-  const [currency, setCurrency] = useState<CurrencyCode>('USD');
+  const [country, setCountry] = useState<string>('');
+  const [department, setDepartment] = useState<string>('');
+  const [level, setLevel] = useState<string>('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode | ''>('');
   const [salaryMajor, setSalaryMajor] = useState<string>('');
   const [hireDate, setHireDate] = useState<string>(
     new Date().toISOString().split('T')[0],
@@ -68,11 +57,11 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     setFirstName('');
     setLastName('');
     setEmail('');
-    setCountry('United States');
-    setDepartment('Engineering');
-    setLevel('L3');
-    setJobTitle(DEFAULT_JOB_TITLES['Engineering'] || 'Senior Software Engineer');
-    setCurrency('USD');
+    setCountry('');
+    setDepartment('');
+    setLevel('');
+    setJobTitle('');
+    setCurrency('');
     setSalaryMajor('');
     setHireDate(new Date().toISOString().split('T')[0]);
     setErrorMessage(null);
@@ -88,7 +77,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const isAdmin = userRole === 'HR_ADMIN';
   const parsedSalaryMajor = parseFloat(salaryMajor) || 0;
   const salaryMinor = Math.round(parsedSalaryMajor * 100);
-  const rate = FX_RATES_TO_USD[currency] || 1.0;
+  const rate = currency ? FX_RATES_TO_USD[currency as CurrencyCode] || 1.0 : 1.0;
   const previewUsdMinor = Math.round(salaryMinor * rate);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,8 +99,38 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       return;
     }
 
+    if (!country) {
+      setErrorMessage('Please select a country.');
+      return;
+    }
+
+    if (!department) {
+      setErrorMessage('Please select a department.');
+      return;
+    }
+
+    if (!level) {
+      setErrorMessage('Please select a seniority level.');
+      return;
+    }
+
+    if (!jobTitle.trim()) {
+      setErrorMessage('Please enter a job title.');
+      return;
+    }
+
+    if (!currency) {
+      setErrorMessage('Please select a pay currency.');
+      return;
+    }
+
     if (salaryMinor <= 0) {
       setErrorMessage('Starting salary must be greater than zero.');
+      return;
+    }
+
+    if (!hireDate) {
+      setErrorMessage('Please select a hire date.');
       return;
     }
 
@@ -125,7 +144,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         department,
         level,
         jobTitle: jobTitle.trim(),
-        currency,
+        currency: currency as CurrencyCode,
         baseSalaryMinor: salaryMinor,
         hireDate,
       });
@@ -182,7 +201,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Sarah"
+                placeholder="e.g. Sarah"
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -195,7 +214,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Connor"
+                placeholder="e.g. Connor"
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -211,7 +230,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="sarah.connor@acme.com"
+              placeholder="e.g. sarah.connor@acme.com"
               className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -223,10 +242,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 Location *
               </label>
               <select
+                required
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="" disabled>Select Country</option>
                 {COUNTRIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -237,13 +258,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 Department *
               </label>
               <select
+                required
                 value={department}
-                onChange={(e) => {
-                  setDepartment(e.target.value);
-                  setJobTitle(DEFAULT_JOB_TITLES[e.target.value] || 'Specialist');
-                }}
+                onChange={(e) => setDepartment(e.target.value)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="" disabled>Select Department</option>
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -258,10 +278,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 Seniority Level *
               </label>
               <select
+                required
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="" disabled>Select Level</option>
                 {LEVELS.map((lvl) => (
                   <option key={lvl} value={lvl}>{lvl}</option>
                 ))}
@@ -276,6 +298,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 required
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="e.g. Software Engineer"
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -288,10 +311,12 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 Pay Currency *
               </label>
               <select
+                required
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="" disabled>Select Currency</option>
                 {CURRENCIES.map((cur) => (
                   <option key={cur} value={cur}>{cur}</option>
                 ))}
@@ -299,7 +324,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Starting Base Salary ({currency}) *
+                Starting Base Salary {currency ? `(${currency})` : ''} *
               </label>
               <input
                 type="number"
@@ -308,6 +333,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 step="500"
                 value={salaryMajor}
                 onChange={(e) => setSalaryMajor(e.target.value)}
+                placeholder="e.g. 75000"
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
               />
             </div>
