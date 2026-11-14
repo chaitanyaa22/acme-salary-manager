@@ -63,11 +63,12 @@ export class EmployeesService {
       qb.andWhere('emp.currency = :currency', { currency });
     }
 
-    // Debounced search across name, email, or employeeId
+    // Search across full name, firstName, lastName, email, or employeeId
     if (search && search.trim().length > 0) {
-      const term = `%${search.trim().toLowerCase()}%`;
+      const cleanSearch = search.trim().replace(/\s+/g, ' ');
+      const term = `%${cleanSearch.toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(emp.firstName) LIKE :term OR LOWER(emp.lastName) LIKE :term OR LOWER(emp.email) LIKE :term OR LOWER(emp.employeeId) LIKE :term)',
+        '(LOWER(CONCAT(emp.firstName, \' \', emp.lastName)) LIKE :term OR LOWER(CONCAT(emp.lastName, \' \', emp.firstName)) LIKE :term OR LOWER(emp.firstName) LIKE :term OR LOWER(emp.lastName) LIKE :term OR LOWER(emp.email) LIKE :term OR LOWER(emp.employeeId) LIKE :term)',
         { term },
       );
     }

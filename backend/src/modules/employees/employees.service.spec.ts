@@ -100,6 +100,34 @@ describe('EmployeesService', () => {
         'emp.department = :department',
         { department: 'Engineering' },
       );
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        '(LOWER(CONCAT(emp.firstName, \' \', emp.lastName)) LIKE :term OR LOWER(CONCAT(emp.lastName, \' \', emp.firstName)) LIKE :term OR LOWER(emp.firstName) LIKE :term OR LOWER(emp.lastName) LIKE :term OR LOWER(emp.email) LIKE :term OR LOWER(emp.employeeId) LIKE :term)',
+        { term: '%jane%' },
+      );
+    });
+
+    it('should support full name search with space normalization', async () => {
+      const qbMock: any = {
+        where: vi.fn().mockReturnThis(),
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[mockEmployee], 1]),
+      };
+
+      vi.mocked(employeeRepo.createQueryBuilder!).mockReturnValue(qbMock);
+
+      await service.findAll({
+        page: 1,
+        limit: 10,
+        search: '  Jane   Doe  ',
+      });
+
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        '(LOWER(CONCAT(emp.firstName, \' \', emp.lastName)) LIKE :term OR LOWER(CONCAT(emp.lastName, \' \', emp.firstName)) LIKE :term OR LOWER(emp.firstName) LIKE :term OR LOWER(emp.lastName) LIKE :term OR LOWER(emp.email) LIKE :term OR LOWER(emp.employeeId) LIKE :term)',
+        { term: '%jane doe%' },
+      );
     });
   });
 
