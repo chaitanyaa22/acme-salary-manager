@@ -177,11 +177,10 @@ const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
                 ? 'Adjust employee compensation'
                 : 'Requires HR_ADMIN role (Viewer is read-only)'
             }
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-              isAdmin
-                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${isAdmin
+              ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
           >
             {isAdmin ? <Edit3 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
             <span>Revise</span>
@@ -446,23 +445,11 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
                   {renderSortIcon('firstName')}
                 </div>
               </th>
-              <th
-                onClick={() => handleSort('country')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Location</span>
-                  {renderSortIcon('country')}
-                </div>
+              <th className="py-3 px-4">
+                Location
               </th>
-              <th
-                onClick={() => handleSort('department')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Department</span>
-                  {renderSortIcon('department')}
-                </div>
+              <th className="py-3 px-4">
+                Department
               </th>
               <th
                 onClick={() => handleSort('level')}
@@ -473,14 +460,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
                   {renderSortIcon('level')}
                 </div>
               </th>
-              <th
-                onClick={() => handleSort('baseSalaryMinor')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right transition-colors"
-              >
-                <div className="flex items-center justify-end gap-1.5">
-                  <span>Local Salary</span>
-                  {renderSortIcon('baseSalaryMinor')}
-                </div>
+              <th className="py-3 px-4 text-right">
+                Local Salary
               </th>
               <th
                 onClick={() => handleSort('baseSalaryUsdMinor')}
