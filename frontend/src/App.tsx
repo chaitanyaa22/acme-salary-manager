@@ -17,13 +17,13 @@ import { EmployeeTable } from './components/EmployeeTable';
 import { SalaryRevisionModal } from './components/SalaryRevisionModal';
 import { AuditDrawer } from './components/AuditDrawer';
 import { AddEmployeeModal } from './components/AddEmployeeModal';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { LoginForm } from './components/LoginForm';
 
 export function App() {
-  // Auth state
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  // Auth state: hydrate from localStorage synchronously to eliminate login screen flicker on refresh
+  const [currentUser, setCurrentUser] = useState<User | null>(() => api.getUser());
+  const [authLoading, setAuthLoading] = useState<boolean>(() => !api.getUser());
 
   // Analytics state
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
@@ -142,6 +142,7 @@ export function App() {
           return;
         } catch {
           api.logout();
+          setCurrentUser(null);
         }
       }
       if (isDemoEnabled) {
@@ -245,7 +246,12 @@ export function App() {
           </div>
         )}
 
-        {!currentUser ? (
+        {authLoading && !currentUser ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-3">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <p className="text-xs font-medium text-slate-500">Checking credentials...</p>
+          </div>
+        ) : !currentUser ? (
           <LoginForm onLogin={handleCustomLogin} isLoading={authLoading} />
         ) : (
           <>

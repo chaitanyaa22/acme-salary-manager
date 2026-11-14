@@ -16,9 +16,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiClient {
   private token: string | null = null;
+  private user: User | null = null;
 
   constructor() {
     this.token = localStorage.getItem('acme_auth_token');
+    const rawUser = localStorage.getItem('acme_user');
+    if (rawUser) {
+      try {
+        this.user = JSON.parse(rawUser);
+      } catch {
+        this.user = null;
+      }
+    }
   }
 
   setToken(token: string | null) {
@@ -32,6 +41,19 @@ class ApiClient {
 
   getToken(): string | null {
     return this.token;
+  }
+
+  setUser(user: User | null) {
+    this.user = user;
+    if (user) {
+      localStorage.setItem('acme_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('acme_user');
+    }
+  }
+
+  getUser(): User | null {
+    return this.user;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -72,15 +94,19 @@ class ApiClient {
       body: JSON.stringify({ email, password }),
     });
     this.setToken(data.accessToken);
+    this.setUser(data.user);
     return data;
   }
 
   async getMe(): Promise<User> {
-    return this.request<User>('/auth/me');
+    const user = await this.request<User>('/auth/me');
+    this.setUser(user);
+    return user;
   }
 
   logout() {
     this.setToken(null);
+    this.setUser(null);
   }
 
   // Employee APIs
