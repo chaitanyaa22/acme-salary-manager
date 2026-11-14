@@ -27,3 +27,23 @@ Evaluation criteria: clean architecture, pragmatic engineering judgment, increme
 5. `test(backend): add fast deterministic Jest unit and integration tests for currency math, transactions, and RBAC`
 6. `feat(frontend): build React + shadcn/ui dashboard with analytics charts, 10k employee table, salary revision modal, and audit drawer`
 7. `docs: add AI workflow log (docs/03-ai-workflow-log.md) and production deployment README`
+
+## Technical Guardrails & Conventions
+
+1. **PostgreSQL `BIGINT` String Serialization (TypeORM Gotcha):**
+   - The `pg` driver returns `BIGINT` columns as JavaScript `string`s by default to prevent precision loss (`Number.MAX_SAFE_INTEGER`).
+   - Either use a TypeORM `ValueTransformer` (`to: (val) => val, from: (val) => Number(val)`—safe up to $90 trillion in cents) OR serialize `BIGINT` fields cleanly in response DTOs so arithmetic never accidentally concatenates strings (`"500000" + "100000" = "500000100000"`).
+
+2. **Standardized API Response & Error Contract:**
+   - Paginated list endpoints must return `{ data: T[], meta: { total: number, page: number, limit: number, totalPages: number } }`.
+   - Use a global `HttpExceptionFilter` so all 4xx/5xx errors return a consistent JSON shape: `{ statusCode, message, error, timestamp, path }`.
+
+3. **Frontend Component & UX Guardrails:**
+   - Scaffold `frontend/` with Vite (`npm create vite@latest frontend -- --template react-ts`), Tailwind CSS, `shadcn/ui`, `@tanstack/react-table`, `recharts`, and `lucide-react`.
+   - Include a **sticky top banner or login card with one-click demo logins** (`Admin: admin@acme.com / admin123` and `Viewer: viewer@acme.com / viewer123`) so reviewers can test RBAC in 5 seconds.
+   - Format all minor-unit salaries using `Intl.NumberFormat` according to the employee's `currency` code (`USD`, `INR`, `GBP`, `EUR`, `SGD`).
+
+4. **Strict Git Hygiene:**
+   - Do **not** bundle multiple features into a single giant commit.
+   - Run `npm test` and `npm run build` before every commit to verify zero TypeScript or test regressions.
+   - Never commit `.env` files.
