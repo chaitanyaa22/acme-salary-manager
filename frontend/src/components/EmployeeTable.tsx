@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Employee, UserRole, QueryEmployeesParams, PaginationMeta } from '../types';
 import { formatCurrency } from '../lib/utils';
 import {
@@ -26,7 +26,7 @@ interface EmployeeTableProps {
   userRole?: UserRole;
 }
 
-const COUNTRIES = ['United States', 'India', 'United Kingdom', 'Germany', 'Singapore'];
+const COUNTRIES = ['United States', 'India', 'United Kingdom', 'Germany', 'Singapore'] as const;
 const DEPARTMENTS = [
   'Engineering',
   'Product',
@@ -36,11 +36,166 @@ const DEPARTMENTS = [
   'Human Resources',
   'Finance',
   'Operations',
-];
-const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
-const CURRENCIES = ['USD', 'INR', 'GBP', 'EUR', 'SGD'];
+] as const;
+const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'] as const;
+const CURRENCIES = ['USD', 'INR', 'GBP', 'EUR', 'SGD'] as const;
 
-export const EmployeeTable: React.FC<EmployeeTableProps> = ({
+/**
+ * High-fidelity Skeleton Row with matching column widths, heights, and alignments.
+ * Eliminates layout shifts (CLS) when switching filters or paginating.
+ */
+const SkeletonRow: React.FC<{ index: number }> = React.memo(({ index }) => {
+  // Stagger opacity slightly for a natural wave animation
+  const delayClass = index % 2 === 0 ? 'opacity-90' : 'opacity-70';
+
+  return (
+    <tr className={`border-b border-slate-100 animate-pulse ${delayClass}`}>
+      {/* 1. ID */}
+      <td className="py-3 px-4">
+        <div className="h-4 w-16 bg-slate-200/90 rounded" />
+      </td>
+
+      {/* 2. Employee Name & Job Title */}
+      <td className="py-3 px-4">
+        <div className="h-4 w-28 bg-slate-200/90 rounded mb-1" />
+        <div className="h-3 w-40 bg-slate-100 rounded" />
+      </td>
+
+      {/* 3. Location */}
+      <td className="py-3 px-4 whitespace-nowrap">
+        <div className="h-4 w-20 bg-slate-100 rounded" />
+      </td>
+
+      {/* 4. Department */}
+      <td className="py-3 px-4 whitespace-nowrap">
+        <div className="h-4 w-24 bg-slate-100 rounded" />
+      </td>
+
+      {/* 5. Level Badge */}
+      <td className="py-3 px-4 whitespace-nowrap">
+        <div className="h-5 w-8 bg-slate-200/80 rounded" />
+      </td>
+
+      {/* 6. Local Salary */}
+      <td className="py-3 px-4 text-right whitespace-nowrap">
+        <div className="h-4 w-20 bg-slate-200/80 rounded ml-auto" />
+      </td>
+
+      {/* 7. Normalized USD */}
+      <td className="py-3 px-4 text-right whitespace-nowrap">
+        <div className="h-4 w-20 bg-slate-200/90 rounded ml-auto" />
+      </td>
+
+      {/* 8. Actions (Revise & Audit Buttons) */}
+      <td className="py-3 px-4 text-center whitespace-nowrap">
+        <div className="flex items-center justify-center gap-1.5">
+          <div className="h-6 w-16 bg-slate-100 rounded" />
+          <div className="h-6 w-16 bg-slate-100 rounded" />
+        </div>
+      </td>
+    </tr>
+  );
+});
+SkeletonRow.displayName = 'SkeletonRow';
+
+/**
+ * Memoized Row Component preventing re-renders of unaffected rows.
+ */
+interface EmployeeTableRowProps {
+  employee: Employee;
+  isAdmin: boolean;
+  onReviseSalary: (employee: Employee) => void;
+  onViewHistory: (employee: Employee) => void;
+}
+
+const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
+  employee,
+  isAdmin,
+  onReviseSalary,
+  onViewHistory,
+}) => {
+  return (
+    <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
+      {/* ID */}
+      <td className="py-3 px-4 font-mono font-medium text-blue-600">
+        {employee.employeeId}
+      </td>
+
+      {/* Name & Title */}
+      <td className="py-3 px-4">
+        <div className="font-semibold text-slate-900">
+          {employee.firstName} {employee.lastName}
+        </div>
+        <div className="text-[11px] text-slate-500 truncate max-w-xs">
+          {employee.jobTitle}
+        </div>
+      </td>
+
+      {/* Country */}
+      <td className="py-3 px-4 whitespace-nowrap text-slate-700">
+        {employee.country}
+      </td>
+
+      {/* Department */}
+      <td className="py-3 px-4 whitespace-nowrap text-slate-700">
+        {employee.department}
+      </td>
+
+      {/* Level Badge */}
+      <td className="py-3 px-4 whitespace-nowrap">
+        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+          {employee.level}
+        </span>
+      </td>
+
+      {/* Local Salary (Minor formatted to Major) */}
+      <td className="py-3 px-4 text-right font-medium text-slate-900 whitespace-nowrap">
+        {formatCurrency(employee.baseSalaryMinor, employee.currency)}
+      </td>
+
+      {/* Normalized USD (Minor formatted to Major) */}
+      <td className="py-3 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
+        {formatCurrency(employee.baseSalaryUsdMinor, 'USD')}
+      </td>
+
+      {/* Actions */}
+      <td className="py-3 px-4 text-center whitespace-nowrap">
+        <div className="flex items-center justify-center gap-1.5">
+          {/* Revise Salary Button */}
+          <button
+            onClick={() => onReviseSalary(employee)}
+            title={
+              isAdmin
+                ? 'Adjust employee compensation'
+                : 'Requires HR_ADMIN role (Viewer is read-only)'
+            }
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+              isAdmin
+                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {isAdmin ? <Edit3 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+            <span>Revise</span>
+          </button>
+
+          {/* Audit History Button */}
+          <button
+            onClick={() => onViewHistory(employee)}
+            title="View compensation revision audit trail"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Audit</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
+EmployeeTableRow.displayName = 'EmployeeTableRow';
+
+export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
   data,
   meta,
   params,
@@ -53,12 +208,17 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   const [searchInput, setSearchInput] = useState<string>(params.search || '');
   const isAdmin = userRole === 'HR_ADMIN';
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onParamsChange({ search: searchInput, page: 1 });
-  };
+  // Synchronize local input if search query is reset externally
+  useEffect(() => {
+    setSearchInput(params.search || '');
+  }, [params.search]);
 
-  const handleClearFilters = () => {
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    onParamsChange({ search: searchInput.trim() || undefined, page: 1 });
+  }, [searchInput, onParamsChange]);
+
+  const handleClearFilters = useCallback(() => {
     setSearchInput('');
     onParamsChange({
       search: undefined,
@@ -68,9 +228,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       currency: undefined,
       page: 1,
     });
-  };
+  }, [onParamsChange]);
 
-  const handleSort = (field: string) => {
+  const handleSort = useCallback((field: string) => {
     if (params.sortBy === field) {
       onParamsChange({
         sortOrder: params.sortOrder === 'ASC' ? 'DESC' : 'ASC',
@@ -83,18 +243,29 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         page: 1,
       });
     }
-  };
+  }, [params.sortBy, params.sortOrder, onParamsChange]);
 
-  const renderSortIcon = (field: string) => {
+  const renderSortIcon = useCallback((field: string) => {
     if (params.sortBy !== field) {
-      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />;
+      return (
+        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      );
     }
     return params.sortOrder === 'DESC' ? (
       <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
     ) : (
       <ArrowUp className="w-3.5 h-3.5 text-blue-600" />
     );
-  };
+  }, [params.sortBy, params.sortOrder]);
+
+  // Determine skeleton row count: matches current limit or default 10 to prevent layout collapse
+  const skeletonCount = useMemo(() => {
+    return Math.min(params.limit || 20, 10);
+  }, [params.limit]);
+
+  const hasActiveFilters = Boolean(
+    params.country || params.department || params.level || params.currency || params.search
+  );
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -113,16 +284,18 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
             />
             <button
               type="submit"
-              className="absolute right-1.5 top-1.5 px-2.5 py-1 bg-slate-900 text-white rounded text-[11px] font-semibold hover:bg-slate-800 transition-colors"
+              disabled={isLoading}
+              className="absolute right-1.5 top-1.5 px-2.5 py-1 bg-slate-900 text-white rounded text-[11px] font-semibold hover:bg-slate-800 disabled:opacity-60 transition-colors"
             >
               Search
             </button>
           </form>
 
           {/* Quick Clear Filter Button */}
-          {(params.country || params.department || params.level || params.currency || params.search) && (
+          {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
+              disabled={isLoading}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
@@ -187,19 +360,23 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           </select>
 
           <span className="ml-auto text-xs font-semibold text-slate-500">
-            {meta.total?.toLocaleString() ?? 0} matches
+            {isLoading ? (
+              <span className="inline-block w-16 h-4 bg-slate-200 animate-pulse rounded" />
+            ) : (
+              `${meta.total?.toLocaleString() ?? 0} matches`
+            )}
           </span>
         </div>
       </div>
 
       {/* Data Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto min-h-[360px]">
         <table className="w-full text-left text-xs text-slate-600">
-          <thead className="bg-slate-100 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+          <thead className="bg-slate-100 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200 select-none">
             <tr>
               <th
                 onClick={() => handleSort('employeeId')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>ID</span>
@@ -208,7 +385,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('firstName')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Employee</span>
@@ -217,7 +394,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('country')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Location</span>
@@ -226,7 +403,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('department')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Department</span>
@@ -235,7 +412,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('level')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Level</span>
@@ -244,7 +421,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('baseSalaryMinor')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right transition-colors"
               >
                 <div className="flex items-center justify-end gap-1.5">
                   <span>Local Salary</span>
@@ -253,7 +430,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
               <th
                 onClick={() => handleSort('baseSalaryUsdMinor')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right"
+                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right transition-colors"
               >
                 <div className="flex items-center justify-end gap-1.5">
                   <span>Normalized USD</span>
@@ -265,12 +442,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {isLoading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  <td colSpan={8} className="py-3 px-4">
-                    <div className="h-4 bg-slate-100 rounded" />
-                  </td>
-                </tr>
+              Array.from({ length: skeletonCount }).map((_, i) => (
+                <SkeletonRow key={`skeleton-${i}`} index={i} />
               ))
             ) : data.length === 0 ? (
               <tr>
@@ -281,86 +454,13 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </tr>
             ) : (
               data.map((employee) => (
-                <tr key={employee.id} className="hover:bg-slate-50 transition-colors">
-                  {/* ID */}
-                  <td className="py-3 px-4 font-mono font-medium text-blue-600">
-                    {employee.employeeId}
-                  </td>
-
-                  {/* Name & Title */}
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-slate-900">
-                      {employee.firstName} {employee.lastName}
-                    </div>
-                    <div className="text-[11px] text-slate-500 truncate max-w-xs">
-                      {employee.jobTitle}
-                    </div>
-                  </td>
-
-                  {/* Country */}
-                  <td className="py-3 px-4 whitespace-nowrap text-slate-700">
-                    {employee.country}
-                  </td>
-
-                  {/* Department */}
-                  <td className="py-3 px-4 whitespace-nowrap text-slate-700">
-                    {employee.department}
-                  </td>
-
-                  {/* Level Badge */}
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
-                      {employee.level}
-                    </span>
-                  </td>
-
-                  {/* Local Salary (Minor formatted to Major) */}
-                  <td className="py-3 px-4 text-right font-medium text-slate-900 whitespace-nowrap">
-                    {formatCurrency(employee.baseSalaryMinor, employee.currency)}
-                  </td>
-
-                  {/* Normalized USD (Minor formatted to Major) */}
-                  <td className="py-3 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
-                    {formatCurrency(employee.baseSalaryUsdMinor, 'USD')}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {/* Revise Salary Button */}
-                      <button
-                        onClick={() => onReviseSalary(employee)}
-                        title={
-                          isAdmin
-                            ? 'Adjust employee compensation'
-                            : 'Requires HR_ADMIN role (Viewer is read-only)'
-                        }
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                          isAdmin
-                            ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        }`}
-                      >
-                        {isAdmin ? (
-                          <Edit3 className="w-3.5 h-3.5" />
-                        ) : (
-                          <Lock className="w-3.5 h-3.5" />
-                        )}
-                        <span>Revise</span>
-                      </button>
-
-                      {/* Audit History Button */}
-                      <button
-                        onClick={() => onViewHistory(employee)}
-                        title="View compensation revision audit trail"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                      >
-                        <History className="w-3.5 h-3.5" />
-                        <span>Audit</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <EmployeeTableRow
+                  key={employee.id}
+                  employee={employee}
+                  isAdmin={isAdmin}
+                  onReviseSalary={onReviseSalary}
+                  onViewHistory={onViewHistory}
+                />
               ))
             )}
           </tbody>
@@ -410,4 +510,5 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       </div>
     </div>
   );
-};
+});
+EmployeeTable.displayName = 'EmployeeTable';

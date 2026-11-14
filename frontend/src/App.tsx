@@ -152,18 +152,32 @@ export function App() {
     initAuth();
   }, [isDemoEnabled]);
 
-  // Re-fetch data on user change
+  // Fetch Analytics data on login/user switch
   useEffect(() => {
     if (currentUser) {
       loadAnalytics();
+    }
+  }, [currentUser, loadAnalytics]);
+
+  // Fetch Employees directory when user or query parameters (filters, page, sort) change
+  useEffect(() => {
+    if (currentUser) {
       loadEmployees();
     }
-  }, [currentUser, loadAnalytics, loadEmployees]);
+  }, [currentUser, loadEmployees]);
 
   // Callback on parameter update from table
-  const handleParamsChange = (newParams: Partial<QueryEmployeesParams>) => {
+  const handleParamsChange = useCallback((newParams: Partial<QueryEmployeesParams>) => {
     setQueryParams((prev) => ({ ...prev, ...newParams }));
-  };
+  }, []);
+
+  const handleReviseEmployee = useCallback((emp: Employee) => {
+    setSelectedReviseEmployee(emp);
+  }, []);
+
+  const handleViewHistory = useCallback((emp: Employee) => {
+    setSelectedHistoryEmployee(emp);
+  }, []);
 
   // Handle salary revision mutation
   const handleSaveSalaryRevision = async (data: {
@@ -258,8 +272,8 @@ export function App() {
                 meta={paginationMeta}
                 params={queryParams}
                 onParamsChange={handleParamsChange}
-                onReviseSalary={(emp) => setSelectedReviseEmployee(emp)}
-                onViewHistory={(emp) => setSelectedHistoryEmployee(emp)}
+                onReviseSalary={handleReviseEmployee}
+                onViewHistory={handleViewHistory}
                 isLoading={tableLoading}
                 userRole={currentUser?.role}
               />
