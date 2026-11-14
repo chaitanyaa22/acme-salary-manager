@@ -9,10 +9,12 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security Middleware (CSP disabled for Swagger UI compatibility)
+  // Security Middleware (configured for Swagger UI compatibility)
   app.use(
     helmet({
       contentSecurityPolicy: false,
+      crossOriginResourcePolicy: false,
+      crossOriginOpenerPolicy: false,
     }),
   );
   app.enableCors({
@@ -20,8 +22,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global API Prefix
-  app.setGlobalPrefix('api');
+  // Global API Prefix with Swagger UI routes excluded
+  app.setGlobalPrefix('api', {
+    exclude: ['docs', 'docs/(.*)', 'api/docs', 'api/docs/(.*)'],
+  });
 
   // Global Exception Filter
   app.useGlobalFilters(new HttpExceptionFilter());
@@ -49,7 +53,22 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  const swaggerCustomOptions = {
+    customSiteTitle: 'ACME Compensation API Docs',
+    customCssUrl: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui.min.css',
+    ],
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui-standalone-preset.min.js',
+    ],
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  };
+
+  SwaggerModule.setup('api/docs', app, document, swaggerCustomOptions);
+  SwaggerModule.setup('docs', app, document, swaggerCustomOptions);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
