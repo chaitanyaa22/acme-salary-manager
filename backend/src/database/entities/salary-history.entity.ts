@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Currency } from '../../common/enums/currency.enum.js';
 import { ColumnNumericTransformer } from '../../common/transformers/column-numeric.transformer.js';
-import { Employee } from './employee.entity.js';
+import type { Employee } from './employee.entity.js';
 
 @Entity('salary_history')
 @Index('idx_salary_history_employee_id', ['employeeId'])
@@ -18,10 +18,10 @@ export class SalaryHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'employee_id' })
+  @Column({ name: 'employee_id', type: 'uuid' })
   employeeId: string;
 
-  @ManyToOne(() => Employee, (employee) => employee.salaryHistories, {
+  @ManyToOne('Employee', (employee: Employee) => employee.salaryHistories, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'employee_id' })
@@ -64,10 +64,10 @@ export class SalaryHistory {
   @Column({ name: 'effective_date', type: 'date' })
   effectiveDate: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   reason: string;
 
-  @Column({ name: 'changed_by', nullable: true })
+  @Column({ name: 'changed_by', type: 'varchar', nullable: true })
   changedBy?: string;
 
   @CreateDateColumn({ name: 'created_at' })

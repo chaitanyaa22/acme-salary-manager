@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity.js';
@@ -11,7 +11,10 @@ export class SeederService {
   private readonly logger = new Logger(SeederService.name);
   private readonly generator = new DeterministicGenerator();
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    @Inject(DataSource)
+    private readonly dataSource: DataSource,
+  ) {}
 
   async run(employeeCount = 10000): Promise<void> {
     const startTime = Date.now();

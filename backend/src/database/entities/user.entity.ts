@@ -13,14 +13,14 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   @Index('idx_users_email', { unique: true })
   email: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ name: 'password_hash', type: 'varchar' })
   passwordHash: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name: string;
 
   @Column({

@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Currency } from '../../common/enums/currency.enum.js';
 import { ColumnNumericTransformer } from '../../common/transformers/column-numeric.transformer.js';
-import { SalaryHistory } from './salary-history.entity.js';
+import type { SalaryHistory } from './salary-history.entity.js';
 
 @Entity('employees')
 @Index('idx_employees_country_dept_level', ['country', 'department', 'level'])
@@ -18,30 +18,30 @@ export class Employee {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'employee_id', unique: true })
+  @Column({ name: 'employee_id', type: 'varchar', unique: true })
   @Index('idx_employees_employee_id', { unique: true })
   employeeId: string;
 
-  @Column({ name: 'first_name' })
+  @Column({ name: 'first_name', type: 'varchar' })
   firstName: string;
 
-  @Column({ name: 'last_name' })
+  @Column({ name: 'last_name', type: 'varchar' })
   lastName: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   @Index('idx_employees_email', { unique: true })
   email: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   country: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   department: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   level: string;
 
-  @Column({ name: 'job_title' })
+  @Column({ name: 'job_title', type: 'varchar' })
   jobTitle: string;
 
   @Column({
@@ -68,10 +68,10 @@ export class Employee {
   @Column({ name: 'hire_date', type: 'date' })
   hireDate: string;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
-  @OneToMany(() => SalaryHistory, (salaryHistory) => salaryHistory.employee, {
+  @OneToMany('SalaryHistory', (salaryHistory: SalaryHistory) => salaryHistory.employee, {
     cascade: true,
   })
   salaryHistories: SalaryHistory[];
