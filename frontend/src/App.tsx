@@ -16,6 +16,7 @@ import { EmployeeTable } from './components/EmployeeTable';
 import { SalaryRevisionModal } from './components/SalaryRevisionModal';
 import { AuditDrawer } from './components/AuditDrawer';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { LoginForm } from './components/LoginForm';
 
 export function App() {
   // Auth state
@@ -50,6 +51,9 @@ export function App() {
   const [selectedHistoryEmployee, setSelectedHistoryEmployee] = useState<Employee | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
+  // Demo access configuration: set VITE_ENABLE_DEMO=false to disable
+  const isDemoEnabled = import.meta.env.VITE_ENABLE_DEMO !== 'false';
+
   // Demo user credentials per AGENT_CONTEXT
   const handleLoginDemo = async (role: 'HR_ADMIN' | 'HR_VIEWER') => {
     try {
@@ -62,6 +66,20 @@ export function App() {
       setCurrentUser(response.user);
     } catch (err: any) {
       setGlobalError(`Login failed: ${err.message}. (Ensure backend is running and database is seeded)`);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Custom user credentials login
+  const handleCustomLogin = async (email: string, password: string) => {
+    try {
+      setAuthLoading(true);
+      setGlobalError(null);
+      const response = await api.login(email, password);
+      setCurrentUser(response.user);
+    } catch (err: any) {
+      throw err;
     } finally {
       setAuthLoading(false);
     }
@@ -109,7 +127,7 @@ export function App() {
     }
   }, [currentUser, queryParams]);
 
-  // Initial authentication check: try existing token or auto-login with HR_ADMIN
+  // Initial authentication check: try existing token or auto-login with HR_ADMIN (if demo enabled)
   useEffect(() => {
     const initAuth = async () => {
       const existingToken = api.getToken();
@@ -123,12 +141,16 @@ export function App() {
           api.logout();
         }
       }
-      // Out-of-the-box convenience for reviewer: auto-login as Admin
-      await handleLoginDemo('HR_ADMIN');
+      if (isDemoEnabled) {
+        // Out-of-the-box convenience for reviewer: auto-login as Admin
+        await handleLoginDemo('HR_ADMIN');
+      } else {
+        setAuthLoading(false);
+      }
     };
 
     initAuth();
-  }, []);
+  }, [isDemoEnabled]);
 
   // Re-fetch data on user change
   useEffect(() => {
@@ -164,6 +186,7 @@ export function App() {
         onLoginDemo={handleLoginDemo}
         onLogout={handleLogout}
         isLoading={authLoading}
+        showDemoBar={isDemoEnabled}
       />
 
       {/* Main App Content Area */}
@@ -189,54 +212,60 @@ export function App() {
           </div>
         )}
 
-        {/* Section 1: Org Analytics Dashboard */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Compensation Intelligence</h2>
-              <p className="text-xs text-slate-500">
-                Real-time aggregated metrics normalized to USD across all operating territories.
-              </p>
-            </div>
-            <button
-              onClick={loadAnalytics}
-              disabled={analyticsLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${analyticsLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh Analytics</span>
-            </button>
-          </div>
+        {!currentUser ? (
+          <LoginForm onLogin={handleCustomLogin} isLoading={authLoading} />
+        ) : (
+          <>
+            {/* Section 1: Org Analytics Dashboard */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Compensation Intelligence</h2>
+                  <p className="text-xs text-slate-500">
+                    Real-time aggregated metrics normalized to USD across all operating territories.
+                  </p>
+                </div>
+                <button
+                  onClick={loadAnalytics}
+                  disabled={analyticsLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                  <span>Refresh Analytics</span>
+                </button>
+              </div>
 
-          <AnalyticsDashboard
-            summary={analyticsSummary}
-            byCountry={analyticsCountry}
-            byDepartment={analyticsDept}
-            byLevel={analyticsLevel}
-            isLoading={analyticsLoading}
-          />
-        </section>
+              <AnalyticsDashboard
+                summary={analyticsSummary}
+                byCountry={analyticsCountry}
+                byDepartment={analyticsDept}
+                byLevel={analyticsLevel}
+                isLoading={analyticsLoading}
+              />
+            </section>
 
-        {/* Section 2: 10,000-Row Employee Directory */}
-        <section>
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Employee Directory</h2>
-            <p className="text-xs text-slate-500">
-              Filtered server-side queries over 10,000 employee records with transactional salary audit trails.
-            </p>
-          </div>
+            {/* Section 2: 10,000-Row Employee Directory */}
+            <section>
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-slate-900">Employee Directory</h2>
+                <p className="text-xs text-slate-500">
+                  Filtered server-side queries over 10,000 employee records with transactional salary audit trails.
+                </p>
+              </div>
 
-          <EmployeeTable
-            data={employees}
-            meta={paginationMeta}
-            params={queryParams}
-            onParamsChange={handleParamsChange}
-            onReviseSalary={(emp) => setSelectedReviseEmployee(emp)}
-            onViewHistory={(emp) => setSelectedHistoryEmployee(emp)}
-            isLoading={tableLoading}
-            userRole={currentUser?.role}
-          />
-        </section>
+              <EmployeeTable
+                data={employees}
+                meta={paginationMeta}
+                params={queryParams}
+                onParamsChange={handleParamsChange}
+                onReviseSalary={(emp) => setSelectedReviseEmployee(emp)}
+                onViewHistory={(emp) => setSelectedHistoryEmployee(emp)}
+                isLoading={tableLoading}
+                userRole={currentUser?.role}
+              />
+            </section>
+          </>
+        )}
       </main>
 
       {/* Salary Revision Modal (HR_ADMIN only) */}
