@@ -177,11 +177,10 @@ const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
                 ? 'Adjust employee compensation'
                 : 'Requires HR_ADMIN role (Viewer is read-only)'
             }
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-              isAdmin
-                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${isAdmin
+              ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
           >
             {isAdmin ? <Edit3 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
             <span>Revise</span>
@@ -345,61 +344,75 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
         </div>
 
         {/* Facet Filter Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-          <div className="flex items-center gap-1 text-slate-400 font-semibold uppercase text-[10px] mr-1">
-            <Filter className="w-3 h-3" />
-            <span>Filters:</span>
+        <div className="space-y-2 md:space-y-0 md:flex md:items-center md:gap-2 pt-1 text-xs">
+          {/* Top Row on Mobile: "Filters:" on left and "matches" on right */}
+          <div className="flex items-center justify-between md:justify-start gap-1 text-slate-400 font-semibold uppercase text-[10px]">
+            <div className="flex items-center gap-1">
+              <Filter className="w-3 h-3" />
+              <span>Filters:</span>
+            </div>
+            <span className="md:hidden text-xs font-semibold text-slate-500 normal-case">
+              {isLoading ? (
+                <span className="inline-block w-14 h-3.5 bg-slate-200 animate-pulse rounded" />
+              ) : (
+                `${meta.total?.toLocaleString() ?? 0} matches`
+              )}
+            </span>
           </div>
 
-          {/* Country */}
-          <select
-            value={params.country || ''}
-            onChange={(e) => onParamsChange({ country: e.target.value || undefined, page: 1 })}
-            className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">All Countries</option>
-            {COUNTRIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          {/* Grid Box for Filter Dropdowns (2 per row on mobile, inline on desktop) */}
+          <div className="grid grid-cols-2 md:flex md:items-center gap-2 flex-1">
+            {/* Country */}
+            <select
+              value={params.country || ''}
+              onChange={(e) => onParamsChange({ country: e.target.value || undefined, page: 1 })}
+              className="w-full md:w-auto px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Countries</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
 
-          {/* Department */}
-          <select
-            value={params.department || ''}
-            onChange={(e) => onParamsChange({ department: e.target.value || undefined, page: 1 })}
-            className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">All Departments</option>
-            {DEPARTMENTS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+            {/* Department */}
+            <select
+              value={params.department || ''}
+              onChange={(e) => onParamsChange({ department: e.target.value || undefined, page: 1 })}
+              className="w-full md:w-auto px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Departments</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
 
-          {/* Level */}
-          <select
-            value={params.level || ''}
-            onChange={(e) => onParamsChange({ level: e.target.value || undefined, page: 1 })}
-            className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">All Levels</option>
-            {LEVELS.map((l) => (
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
+            {/* Level */}
+            <select
+              value={params.level || ''}
+              onChange={(e) => onParamsChange({ level: e.target.value || undefined, page: 1 })}
+              className="w-full md:w-auto px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Levels</option>
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
 
-          {/* Currency */}
-          <select
-            value={params.currency || ''}
-            onChange={(e) => onParamsChange({ currency: e.target.value || undefined, page: 1 })}
-            className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">All Currencies</option>
-            {CURRENCIES.map((cur) => (
-              <option key={cur} value={cur}>{cur}</option>
-            ))}
-          </select>
+            {/* Currency */}
+            <select
+              value={params.currency || ''}
+              onChange={(e) => onParamsChange({ currency: e.target.value || undefined, page: 1 })}
+              className="w-full md:w-auto px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Currencies</option>
+              {CURRENCIES.map((cur) => (
+                <option key={cur} value={cur}>{cur}</option>
+              ))}
+            </select>
+          </div>
 
-          <span className="ml-auto text-xs font-semibold text-slate-500">
+          {/* Matches count on Desktop */}
+          <span className="hidden md:inline-block ml-auto text-xs font-semibold text-slate-500 whitespace-nowrap">
             {isLoading ? (
               <span className="inline-block w-16 h-4 bg-slate-200 animate-pulse rounded" />
             ) : (
@@ -432,23 +445,11 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
                   {renderSortIcon('firstName')}
                 </div>
               </th>
-              <th
-                onClick={() => handleSort('country')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Location</span>
-                  {renderSortIcon('country')}
-                </div>
+              <th className="py-3 px-4">
+                Location
               </th>
-              <th
-                onClick={() => handleSort('department')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Department</span>
-                  {renderSortIcon('department')}
-                </div>
+              <th className="py-3 px-4">
+                Department
               </th>
               <th
                 onClick={() => handleSort('level')}
@@ -459,14 +460,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
                   {renderSortIcon('level')}
                 </div>
               </th>
-              <th
-                onClick={() => handleSort('baseSalaryMinor')}
-                className="py-3 px-4 cursor-pointer hover:bg-slate-200/70 group text-right transition-colors"
-              >
-                <div className="flex items-center justify-end gap-1.5">
-                  <span>Local Salary</span>
-                  {renderSortIcon('baseSalaryMinor')}
-                </div>
+              <th className="py-3 px-4 text-right">
+                Local Salary
               </th>
               <th
                 onClick={() => handleSort('baseSalaryUsdMinor')}
