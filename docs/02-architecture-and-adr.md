@@ -77,6 +77,19 @@ graph TD
 * **Context:** Compensation data is sensitive. HR Administrators need write permissions; read-only stakeholders (Finance, Viewers) must be prohibited from tampering with compensation.
 * **Decision:** Two distinct roles (`HR_ADMIN` and `HR_VIEWER`) enforced via declarative NestJS `@Roles(...)` metadata and `RolesGuard`.
 * **Consequences:**
-  * `HR_ADMIN`: Full access to query directory, analytics, and revise salaries.
-  * `HR_VIEWER`: Read-only access to directory, analytics, and audit history. Attempted salary mutations result in an immediate `403 Forbidden`.
+  * `HR_ADMIN`: Full access to query directory, analytics, revise salaries, onboard new employees, and offboard employees.
+  * `HR_VIEWER`: Read-only access to directory, analytics, and audit history. Attempted salary mutations or lifecycle changes result in an immediate `403 Forbidden`.
   * Frontend reflects RBAC dynamically by disabling edit controls and providing one-click demo login buttons.
+
+### ADR-06: Employee Lifecycle Management (Onboarding & Soft-Delete Offboarding)
+* **Status:** Accepted & Proposed for Implementation
+* **Context:** In addition to compensation revision, HR Administrators require mechanisms to onboard new staff and offboard departed personnel. Hard-deleting employees from PostgreSQL destroys foreign key integrity with `salary_history` and violates financial and tax audit compliance requirements.
+* **Decision:**
+  1. **Onboarding (`POST /api/employees`):** Restricted to `HR_ADMIN`. Accepts employee profile and compensation details. Atomically generates the next unique `employeeId` (`ACM-XXXXX`), computes normalized `baseSalaryUsdMinor` via `CurrencyService`, sets `isActive: true`, and inserts an initial `SalaryHistory` record with reason *"Initial employment offer"*.
+  2. **Offboarding (`PATCH /api/employees/:id/deactivate`):** Restricted to `HR_ADMIN`. Soft-deletes the employee by setting `isActive = false`. Hard deletion (`DELETE`) is explicitly forbidden.
+  3. **Directory & Analytics Filtering:** All active directory searches and analytics aggregations enforce `isActive = true`.
+  4. **Cache Invalidation:** Both onboarding and offboarding invalidate the analytics cache (`AnalyticsService.invalidateCache()`), ensuring headcount and total payroll figures update immediately.
+* **Consequences:**
+  * Preserves 100% of historical audit trails and historical compensation data.
+  * Deactivated employees vanish from active directory views and no longer burden payroll aggregation queries.
+  * Re-activation remains technically feasible without data loss.

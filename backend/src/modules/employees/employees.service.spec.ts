@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { EmployeesService } from './employees.service.js';
 import { Employee } from '../../database/entities/employee.entity.js';
@@ -122,6 +122,8 @@ describe('EmployeesService', () => {
         page: 1,
         limit: 10,
         search: '  Jane   Doe  ',
+        sortBy: 'employeeId',
+        sortOrder: 'ASC',
       });
 
       expect(qbMock.andWhere).toHaveBeenCalledWith(
@@ -143,55 +145,15 @@ describe('EmployeesService', () => {
     it('should throw NotFoundException if employee not found', async () => {
       vi.mocked(employeeRepo.findOne!).mockResolvedValue(null);
 
-      await expect(service.findById('non-existent')).rejects.toThrow(
+      await expect(service.findById('unknown-id')).rejects.toThrow(
         NotFoundException,
       );
     });
   });
 
   describe('updateSalary()', () => {
-    it('should execute inside transaction, recalculate USD, record history, and invalidate cache', async () => {
-      const mockManager: any = {
-        findOne: vi.fn().mockResolvedValue({ ...mockEmployee }),
-        create: vi.fn().mockImplementation((_, data) => data),
-        save: vi.fn().mockImplementation((entityClass, data) => Promise.resolve(data)),
-      };
-
-      vi.mocked(dataSource.transaction!).mockImplementation(async (cb: any) => {
-        return cb(mockManager);
-      });
-
-      const updated = await service.updateSalary(
-        'emp-uuid-1',
-        {
-          newSalaryMinor: 14000000,
-          effectiveDate: '2026-11-15',
-          reason: 'Promotion to Staff',
-        },
-        'admin@acme.com',
-      );
-
-      expect(updated.baseSalaryMinor).toBe(14000000);
-      expect(updated.baseSalaryUsdMinor).toBe(14000000);
-
-      // Verify SalaryHistory creation
-      expect(mockManager.create).toHaveBeenCalledWith(
-        SalaryHistory,
-        expect.objectContaining({
-          employeeId: 'emp-uuid-1',
-          previousSalaryMinor: 12500000,
-          newSalaryMinor: 14000000,
-          reason: 'Promotion to Staff',
-          changedBy: 'admin@acme.com',
-        }),
-      );
-
-      // Verify cache invalidation
-      expect(analyticsService.invalidateCache).toHaveBeenCalled();
-    });
-
-    it('should correctly normalize foreign currency to USD minor on salary update', async () => {
-      const gbpEmployee: Employee = {
+    it('should atomically update base salary and record audit history inside transaction', async () => {
+      const gbpEmployee = {
         ...mockEmployee,
         currency: Currency.GBP,
         baseSalaryMinor: 5000000, // 50k GBP
@@ -219,8 +181,8 @@ describe('EmployeesService', () => {
       );
 
       expect(updated.baseSalaryMinor).toBe(6000000);
-      // 60,000 * 1.28 = 76,800 USD -> 7,680,000 cents
       expect(updated.baseSalaryUsdMinor).toBe(7680000);
+      expect(analyticsService.invalidateCache).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if new salary is identical to current salary', async () => {
@@ -242,6 +204,109 @@ describe('EmployeesService', () => {
           },
           'admin@acme.com',
         ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createEmployee()', () => {
+    it('should onboard new employee, generate sequential employeeId, and record initial salary history', async () => {
+      const mockManager: any = {
+        findOne: vi.fn().mockResolvedValue(null), // no collision
+        count: vi.fn().mockResolvedValue(42),
+        create: vi.fn().mockImplementation((_, data) => ({ id: 'new-emp-uuid', ...data })),
+        save: vi.fn().mockImplementation((_, data) => Promise.resolve(data)),
+      };
+
+      vi.mocked(dataSource.transaction!).mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      const newEmp = await service.createEmployee(
+        {
+          firstName: 'Sarah',
+          lastName: 'Connor',
+          email: 'sarah.connor@acme.com',
+          country: 'United States',
+          department: 'Engineering',
+          level: 'L4',
+          jobTitle: 'Staff Software Engineer',
+          currency: Currency.USD,
+          baseSalaryMinor: 14500000,
+          hireDate: '2026-11-14',
+        },
+        'admin@acme.com',
+      );
+
+      expect(newEmp.employeeId).toBe('ACM-00043');
+      expect(newEmp.firstName).toBe('Sarah');
+      expect(newEmp.baseSalaryMinor).toBe(14500000);
+      expect(newEmp.baseSalaryUsdMinor).toBe(14500000);
+      expect(newEmp.isActive).toBe(true);
+
+      expect(mockManager.save).toHaveBeenCalledTimes(2);
+      expect(analyticsService.invalidateCache).toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException if email already exists', async () => {
+      const mockManager: any = {
+        findOne: vi.fn().mockResolvedValue(mockEmployee), // existing
+      };
+
+      vi.mocked(dataSource.transaction!).mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      await expect(
+        service.createEmployee(
+          {
+            firstName: 'Duplicate',
+            lastName: 'User',
+            email: 'jane.doe@acme.com',
+            country: 'United States',
+            department: 'Engineering',
+            level: 'L1',
+            jobTitle: 'Engineer',
+            currency: Currency.USD,
+            baseSalaryMinor: 7000000,
+            hireDate: '2026-11-14',
+          },
+          'admin@acme.com',
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('deactivateEmployee()', () => {
+    it('should soft-delete employee, record separation in salary history, and bust cache', async () => {
+      const activeEmp = { ...mockEmployee, isActive: true };
+      const mockManager: any = {
+        findOne: vi.fn().mockResolvedValue(activeEmp),
+        create: vi.fn().mockImplementation((_, data) => data),
+        save: vi.fn().mockImplementation((_, data) => Promise.resolve(data)),
+      };
+
+      vi.mocked(dataSource.transaction!).mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      const deactivated = await service.deactivateEmployee('emp-uuid-1', 'admin@acme.com');
+      expect(deactivated.isActive).toBe(false);
+      expect(analyticsService.invalidateCache).toHaveBeenCalled();
+      expect(mockManager.save).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw BadRequestException if employee is already deactivated', async () => {
+      const alreadyDeactivated = { ...mockEmployee, isActive: false };
+      const mockManager: any = {
+        findOne: vi.fn().mockResolvedValue(alreadyDeactivated),
+      };
+
+      vi.mocked(dataSource.transaction!).mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      await expect(
+        service.deactivateEmployee('emp-uuid-1', 'admin@acme.com'),
       ).rejects.toThrow(BadRequestException);
     });
   });

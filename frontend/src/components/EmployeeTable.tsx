@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Employee, UserRole, QueryEmployeesParams, PaginationMeta } from '../types';
 import { formatCurrency } from '../lib/utils';
+import { DeactivateEmployeeModal } from './DeactivateEmployeeModal';
 import {
   Search,
   Filter,
@@ -13,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  UserPlus,
+  UserMinus,
 } from 'lucide-react';
 
 interface EmployeeTableProps {
@@ -22,6 +25,8 @@ interface EmployeeTableProps {
   onParamsChange: (newParams: Partial<QueryEmployeesParams>) => void;
   onReviseSalary: (employee: Employee) => void;
   onViewHistory: (employee: Employee) => void;
+  onOpenAddEmployee?: () => void;
+  onDeactivateEmployee?: (employee: Employee) => Promise<void> | void;
   isLoading: boolean;
   userRole?: UserRole;
 }
@@ -86,11 +91,12 @@ const SkeletonRow: React.FC<{ index: number }> = React.memo(({ index }) => {
         <div className="h-4 w-20 bg-slate-200/90 rounded ml-auto" />
       </td>
 
-      {/* 8. Actions (Revise & Audit Buttons) */}
+      {/* 8. Actions (Revise, Audit, Offboard Buttons) */}
       <td className="py-3 px-4 text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-1.5">
-          <div className="h-6 w-16 bg-slate-100 rounded" />
-          <div className="h-6 w-16 bg-slate-100 rounded" />
+          <div className="h-6 w-14 bg-slate-100 rounded" />
+          <div className="h-6 w-14 bg-slate-100 rounded" />
+          <div className="h-6 w-14 bg-slate-100 rounded" />
         </div>
       </td>
     </tr>
@@ -106,6 +112,7 @@ interface EmployeeTableRowProps {
   isAdmin: boolean;
   onReviseSalary: (employee: Employee) => void;
   onViewHistory: (employee: Employee) => void;
+  onDeactivateEmployee?: (employee: Employee) => void;
 }
 
 const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
@@ -113,6 +120,7 @@ const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
   isAdmin,
   onReviseSalary,
   onViewHistory,
+  onDeactivateEmployee,
 }) => {
   return (
     <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
@@ -188,6 +196,18 @@ const EmployeeTableRow = React.memo<EmployeeTableRowProps>(({
             <History className="w-3.5 h-3.5" />
             <span>Audit</span>
           </button>
+
+          {/* Offboard / Deactivate Button (HR_ADMIN only) */}
+          {isAdmin && onDeactivateEmployee && (
+            <button
+              onClick={() => onDeactivateEmployee(employee)}
+              title="Offboard / deactivate employee"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
+            >
+              <UserMinus className="w-3.5 h-3.5" />
+              <span>Offboard</span>
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -202,10 +222,13 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
   onParamsChange,
   onReviseSalary,
   onViewHistory,
+  onOpenAddEmployee,
+  onDeactivateEmployee,
   isLoading,
   userRole = 'HR_VIEWER',
 }) => {
   const [searchInput, setSearchInput] = useState<string>(params.search || '');
+  const [employeeToDeactivate, setEmployeeToDeactivate] = useState<Employee | null>(null);
   const isAdmin = userRole === 'HR_ADMIN';
 
   // Synchronize local input if search query is reset externally
@@ -258,10 +281,13 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
     );
   }, [params.sortBy, params.sortOrder]);
 
-  // Determine skeleton row count: matches current limit or default 10 to prevent layout collapse
+  // Determine skeleton row count: dynamically matches current rendered rows or page limit to prevent empty white space
   const skeletonCount = useMemo(() => {
-    return Math.min(params.limit || 20, 10);
-  }, [params.limit]);
+    if (data.length > 0) {
+      return Math.min(data.length, params.limit || 20);
+    }
+    return Math.min(params.limit || 20, 5);
+  }, [data.length, params.limit]);
 
   const hasActiveFilters = Boolean(
     params.country || params.department || params.level || params.currency || params.search
@@ -291,17 +317,31 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
             </button>
           </form>
 
-          {/* Quick Clear Filter Button */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              <span>Reset Filters</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Quick Clear Filter Button */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                disabled={isLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+
+            {/* Onboard New Employee Button (HR_ADMIN only) */}
+            {isAdmin && onOpenAddEmployee && (
+              <button
+                onClick={onOpenAddEmployee}
+                disabled={isLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-xs transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add Employee</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Facet Filter Dropdowns */}
@@ -370,7 +410,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
       </div>
 
       {/* Data Table */}
-      <div className="overflow-x-auto min-h-[360px]">
+      <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-slate-600">
           <thead className="bg-slate-100 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200 select-none">
             <tr>
@@ -460,6 +500,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
                   isAdmin={isAdmin}
                   onReviseSalary={onReviseSalary}
                   onViewHistory={onViewHistory}
+                  onDeactivateEmployee={isAdmin && onDeactivateEmployee ? setEmployeeToDeactivate : undefined}
                 />
               ))
             )}
@@ -508,6 +549,19 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
           </button>
         </div>
       </div>
+
+      {/* Offboard Deactivation Confirmation Modal (HR_ADMIN only) */}
+      <DeactivateEmployeeModal
+        employee={employeeToDeactivate}
+        isOpen={!!employeeToDeactivate}
+        onClose={() => setEmployeeToDeactivate(null)}
+        onConfirm={async (emp) => {
+          if (onDeactivateEmployee) {
+            await onDeactivateEmployee(emp);
+          }
+        }}
+        userRole={userRole}
+      />
     </div>
   );
 });

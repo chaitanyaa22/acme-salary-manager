@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   User,
   Employee,
+  CreateEmployeeInput,
   QueryEmployeesParams,
   PaginationMeta,
   AnalyticsSummary,
@@ -15,6 +16,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { EmployeeTable } from './components/EmployeeTable';
 import { SalaryRevisionModal } from './components/SalaryRevisionModal';
 import { AuditDrawer } from './components/AuditDrawer';
+import { AddEmployeeModal } from './components/AddEmployeeModal';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { LoginForm } from './components/LoginForm';
 
@@ -49,6 +51,7 @@ export function App() {
   // Modals & Drawers state
   const [selectedReviseEmployee, setSelectedReviseEmployee] = useState<Employee | null>(null);
   const [selectedHistoryEmployee, setSelectedHistoryEmployee] = useState<Employee | null>(null);
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   // Demo access configuration: set VITE_ENABLE_DEMO=false to disable
@@ -192,6 +195,22 @@ export function App() {
     await Promise.all([loadEmployees(), loadAnalytics()]);
   };
 
+  // Handle employee onboarding mutation
+  const handleOnboardEmployee = async (data: CreateEmployeeInput) => {
+    await api.createEmployee(data);
+    await Promise.all([loadEmployees(), loadAnalytics()]);
+  };
+
+  // Handle employee deactivation (offboarding) mutation
+  const handleDeactivateEmployee = async (employee: Employee) => {
+    try {
+      await api.deactivateEmployee(employee.id);
+      await Promise.all([loadEmployees(), loadAnalytics()]);
+    } catch (err: any) {
+      setGlobalError(`Failed to offboard ${employee.firstName} ${employee.lastName}: ${err.message}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Sticky Top Header with 1-Click Role Switcher */}
@@ -274,6 +293,8 @@ export function App() {
                 onParamsChange={handleParamsChange}
                 onReviseSalary={handleReviseEmployee}
                 onViewHistory={handleViewHistory}
+                onOpenAddEmployee={() => setIsAddEmployeeOpen(true)}
+                onDeactivateEmployee={handleDeactivateEmployee}
                 isLoading={tableLoading}
                 userRole={currentUser?.role}
               />
@@ -281,6 +302,14 @@ export function App() {
           </>
         )}
       </main>
+
+      {/* Add Employee Modal (HR_ADMIN only) */}
+      <AddEmployeeModal
+        isOpen={isAddEmployeeOpen}
+        onClose={() => setIsAddEmployeeOpen(false)}
+        onSave={handleOnboardEmployee}
+        userRole={currentUser?.role}
+      />
 
       {/* Salary Revision Modal (HR_ADMIN only) */}
       <SalaryRevisionModal

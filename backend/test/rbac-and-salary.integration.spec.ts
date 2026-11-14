@@ -69,6 +69,15 @@ describe('RBAC & Salary Revisions Integration', () => {
           reason: 'Performance merit',
         },
       ]),
+      createEmployee: vi.fn().mockResolvedValue({
+        ...mockEmployee,
+        id: 'new-emp-id',
+        employeeId: 'ACM-00044',
+      }),
+      deactivateEmployee: vi.fn().mockResolvedValue({
+        ...mockEmployee,
+        isActive: false,
+      }),
     };
 
     controller = new EmployeesController(mockEmployeesService as EmployeesService);
@@ -141,6 +150,81 @@ describe('RBAC & Salary Revisions Integration', () => {
       const history = await controller.getSalaryHistory(mockEmployee.id);
       expect(history).toHaveLength(1);
       expect(history[0].newSalaryMinor).toBe(14000000);
+    });
+  });
+
+  describe('Employee Onboarding RBAC Enforcement (HR_ADMIN only)', () => {
+    const createDto = {
+      firstName: 'Alice',
+      lastName: 'Smith',
+      email: 'alice.smith@acme.com',
+      country: 'United States',
+      department: 'Engineering',
+      level: 'L2',
+      jobTitle: 'Software Engineer',
+      currency: Currency.USD,
+      baseSalaryMinor: 11000000,
+      hireDate: '2026-11-15',
+    };
+
+    it('should ALLOW HR_ADMIN to create an employee', () => {
+      const context = createMockContext(controller.createEmployee, {
+        id: 'admin-id',
+        email: 'admin@acme.com',
+        role: UserRole.HR_ADMIN,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+    });
+
+    it('should execute employee creation when authorized as HR_ADMIN', async () => {
+      const result = await controller.createEmployee(createDto, 'admin@acme.com');
+      expect(result.employeeId).toBe('ACM-00044');
+      expect(mockEmployeesService.createEmployee).toHaveBeenCalledWith(
+        createDto,
+        'admin@acme.com',
+      );
+    });
+
+    it('should FORBID HR_VIEWER from creating an employee (403 Forbidden)', () => {
+      const context = createMockContext(controller.createEmployee, {
+        id: 'viewer-id',
+        email: 'viewer@acme.com',
+        role: UserRole.HR_VIEWER,
+      });
+
+      expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Employee Offboarding RBAC Enforcement (HR_ADMIN only)', () => {
+    it('should ALLOW HR_ADMIN to deactivate an employee', () => {
+      const context = createMockContext(controller.deactivateEmployee, {
+        id: 'admin-id',
+        email: 'admin@acme.com',
+        role: UserRole.HR_ADMIN,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+    });
+
+    it('should execute employee deactivation when authorized as HR_ADMIN', async () => {
+      const result = await controller.deactivateEmployee(mockEmployee.id, 'admin@acme.com');
+      expect(result.isActive).toBe(false);
+      expect(mockEmployeesService.deactivateEmployee).toHaveBeenCalledWith(
+        mockEmployee.id,
+        'admin@acme.com',
+      );
+    });
+
+    it('should FORBID HR_VIEWER from deactivating an employee (403 Forbidden)', () => {
+      const context = createMockContext(controller.deactivateEmployee, {
+        id: 'viewer-id',
+        email: 'viewer@acme.com',
+        role: UserRole.HR_VIEWER,
+      });
+
+      expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
     });
   });
 });

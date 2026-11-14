@@ -17,7 +17,7 @@ export class QueryEmployeesDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page: number = 1;
+  page?: number = 1;
 
   @ApiPropertyOptional({
     default: 20,
@@ -30,7 +30,7 @@ export class QueryEmployeesDto {
   @IsInt()
   @Min(1)
   @Max(100)
-  limit: number = 20;
+  limit?: number = 20;
 
   @ApiPropertyOptional({
     description: 'Search string across name, email, or employee ID',
@@ -86,7 +86,7 @@ export class QueryEmployeesDto {
     'baseSalaryUsdMinor',
     'hireDate',
   ])
-  sortBy: string = 'employeeId';
+  sortBy?: string = 'employeeId';
 
   @ApiPropertyOptional({
     default: 'ASC',
@@ -95,5 +95,5 @@ export class QueryEmployeesDto {
   })
   @IsOptional()
   @IsIn(['ASC', 'DESC', 'asc', 'desc'])
-  sortOrder: 'ASC' | 'DESC' = 'ASC';
+  sortOrder?: 'ASC' | 'DESC' = 'ASC';
 }

@@ -2,6 +2,7 @@ import {
   AuthResponse,
   User,
   Employee,
+  CreateEmployeeInput,
   SalaryHistory,
   PaginatedResponse,
   QueryEmployeesParams,
@@ -98,6 +99,19 @@ class ApiClient {
 
   async getEmployee(id: string): Promise<Employee> {
     return this.request<Employee>(`/employees/${id}`);
+  }
+
+  async createEmployee(data: CreateEmployeeInput): Promise<Employee> {
+    return this.request<Employee>('/employees', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deactivateEmployee(id: string): Promise<Employee> {
+    return this.request<Employee>(`/employees/${id}/deactivate`, {
+      method: 'PATCH',
+    });
   }
 
   async updateSalary(

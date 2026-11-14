@@ -48,6 +48,19 @@ export interface Employee {
   updatedAt: string;
 }
 
+export interface CreateEmployeeInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  country: string;
+  department: string;
+  level: string;
+  jobTitle: string;
+  currency: CurrencyCode;
+  baseSalaryMinor: number;
+  hireDate: string;
+}
+
 export interface PaginationMeta {
   total: number;
   page: number;

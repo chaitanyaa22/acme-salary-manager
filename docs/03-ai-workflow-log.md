@@ -61,6 +61,29 @@ Rather than treating AI as an autonomous "code generator" that produces massive,
 
 ## 4. Reflections on Software Craftsmanship with AI
 
-1. **Small Steps Beat Giant Leaps:** Breaking the feature into 7 discrete, verifiable commits allowed rapid diagnosis and immediate correction of TypeScript type subtleties before they compounded.
+1. **Small Steps Beat Giant Leaps:** Breaking the feature into discrete, verifiable commits allowed rapid diagnosis and immediate correction of TypeScript type subtleties before they compounded.
 2. **Automated Contracts as North Stars:** Establishing the DTO shapes and error envelopes early (`HttpExceptionFilter`, `PaginatedResponseDto`) meant that the backend and frontend integrated seamlessly on the first run with zero schema mismatches.
 3. **UX for the Reviewer:** Recognizing that an engineering assessment reviewer has limited time, we embedded a **sticky top banner with one-click demo login buttons** (`HR_ADMIN` vs `HR_VIEWER`), enabling instant verification of RBAC boundaries without needing to copy-paste passwords.
+
+---
+
+## 5. Iterative Refinement & Requirements Evolution
+
+Following the initial MVP deployment, iterative reviewer interaction drove four targeted domain enhancements:
+
+1. **Cross-Border Compensation Decoupling (2,000 Employees):**
+   * *Requirement:* Validate that legal country and pay currency are fully decoupled (e.g. India-based contractor compensated in USD).
+   * *Implementation:* Updated the deterministic PRNG seeder to assign mismatched country/currency configurations across exactly 20% (2,000 / 10,000) of employees, proving that currency conversion and country analytics aggregate independently.
+2. **High-Fidelity Table Skeleton & Render Optimizations:**
+   * *Requirement:* Eliminate visual layout shift (CLS) when applying filters, searching, or paginating.
+   * *Implementation:* Added `SkeletonRow` with column-accurate widths and alignments, memoized rows (`EmployeeTableRow`) and table handlers with `React.memo` and `useCallback`, and decoupled table queries from global analytics polling.
+3. **Full Name Search Normalization:**
+   * *Requirement:* Support searching by full name in natural (`"Daniel Garcia"`) and inverted order (`"Garcia Daniel"`), handling arbitrary whitespace.
+   * *Implementation:* Replaced single-column LIKE checks with SQL `CONCAT(emp.firstName, ' ', emp.lastName)` and whitespace regex sanitization, verified via automated unit test.
+4. **Employee Lifecycle Architecture (ADR-06):**
+   * *Requirement:* Support adding new hires and offboarding departures while safeguarding historical compensation audits.
+   * *Implementation:* Formalized ADR-06 specifying `POST /api/employees` (onboarding with sequential IDs and initial salary history) and `PATCH /api/employees/:id/deactivate` (soft-delete deactivation enforcing foreign key integrity with `salary_history`).
+5. **Frontend UX Refinements (Form Reset, Responsive Height, & Accessible Modals):**
+   * *Modal Input Reset:* Added automated state clearing (`resetForm()`) to `AddEmployeeModal` upon successful employee onboarding and modal dismiss, ensuring clean input fields without residual state.
+   * *Dynamic Table Height:* Removed fixed `min-h-[360px]` and adjusted skeleton count to match active record counts, eliminating artificial empty whitespace after search queries and selective filters.
+   * *Custom Deactivation Modal:* Built `DeactivateEmployeeModal` replacing native browser `window.confirm`, providing full employee context (name, ID, title, salary) and regulatory compliance notices (ADR-06 soft-deletion).

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
@@ -18,6 +19,7 @@ import {
 import { EmployeesService } from './employees.service.js';
 import { QueryEmployeesDto } from './dto/query-employees.dto.js';
 import { UpdateSalaryDto } from './dto/update-salary.dto.js';
+import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { Employee } from '../../database/entities/employee.entity.js';
 import { SalaryHistory } from '../../database/entities/salary-history.entity.js';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto.js';
@@ -86,6 +88,64 @@ export class EmployeesController {
     @CurrentUser('email') userEmail: string,
   ): Promise<Employee> {
     return this.employeesService.updateSalary(id, dto, userEmail);
+  }
+
+  @Post()
+  @Roles(UserRole.HR_ADMIN)
+  @ApiOperation({
+    summary: 'Onboard a new employee (HR_ADMIN only)',
+    description:
+      'Per ADR-06, creates a new active employee record, computes normalized USD salary, and creates initial salary history record.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Employee onboarded successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation failed on employee fields',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden: Requires HR_ADMIN role',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict: Employee with email already exists',
+  })
+  async createEmployee(
+    @Body() dto: CreateEmployeeDto,
+    @CurrentUser('email') userEmail: string,
+  ): Promise<Employee> {
+    return this.employeesService.createEmployee(dto, userEmail);
+  }
+
+  @Patch(':id/deactivate')
+  @Roles(UserRole.HR_ADMIN)
+  @ApiOperation({
+    summary: 'Offboard / deactivate an employee (HR_ADMIN only)',
+    description:
+      'Per ADR-06, soft-deletes employee (isActive = false), records separation audit entry, and purges analytics cache.',
+  })
+  @ApiParam({ name: 'id', description: 'Employee UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Employee offboarded successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Employee is already deactivated',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden: Requires HR_ADMIN role',
+  })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
+  async deactivateEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('email') userEmail: string,
+  ): Promise<Employee> {
+    return this.employeesService.deactivateEmployee(id, userEmail);
   }
 
   @Get(':id/salary-history')

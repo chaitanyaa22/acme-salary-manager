@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +11,7 @@ import { Employee } from '../../database/entities/employee.entity.js';
 import { SalaryHistory } from '../../database/entities/salary-history.entity.js';
 import { QueryEmployeesDto } from './dto/query-employees.dto.js';
 import { UpdateSalaryDto } from './dto/update-salary.dto.js';
+import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto.js';
 import { CurrencyService } from '../currency/currency.service.js';
 import { AnalyticsService } from '../analytics/analytics.service.js';
@@ -196,6 +198,135 @@ export class EmployeesService {
     return this.salaryHistoryRepository.find({
       where: { employeeId },
       order: { effectiveDate: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Onboards a new employee (ADR-06).
+   * Generates sequential employeeId, computes normalized USD salary,
+   * inserts employee and initial SalaryHistory audit record, and invalidates analytics cache.
+   */
+  async createEmployee(
+    dto: CreateEmployeeDto,
+    changedBy: string,
+  ): Promise<Employee> {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Enforce email uniqueness
+      const existingEmail = await manager.findOne(Employee, {
+        where: { email: dto.email.toLowerCase().trim() },
+      });
+      if (existingEmail) {
+        throw new ConflictException(
+          `Employee with email "${dto.email}" already exists.`,
+        );
+      }
+
+      // 2. Generate sequential unique employeeId
+      const count = await manager.count(Employee);
+      let nextSeq = count + 1;
+      let employeeId = `ACM-${nextSeq.toString().padStart(5, '0')}`;
+      while (await manager.findOne(Employee, { where: { employeeId } })) {
+        nextSeq++;
+        employeeId = `ACM-${nextSeq.toString().padStart(5, '0')}`;
+      }
+
+      // 3. Compute normalized USD minor units
+      const baseSalaryUsdMinor = this.currencyService.toUsdMinor(
+        dto.baseSalaryMinor,
+        dto.currency,
+      );
+
+      // 4. Save new employee
+      const employee = manager.create(Employee, {
+        employeeId,
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        email: dto.email.toLowerCase().trim(),
+        country: dto.country.trim(),
+        department: dto.department.trim(),
+        level: dto.level.trim(),
+        jobTitle: dto.jobTitle.trim(),
+        currency: dto.currency,
+        baseSalaryMinor: dto.baseSalaryMinor,
+        baseSalaryUsdMinor,
+        hireDate: dto.hireDate,
+        isActive: true,
+      });
+      const savedEmployee = await manager.save(Employee, employee);
+
+      // 5. Create initial salary history audit record
+      const salaryHistory = manager.create(SalaryHistory, {
+        employeeId: savedEmployee.id,
+        previousSalaryMinor: 0,
+        newSalaryMinor: dto.baseSalaryMinor,
+        previousSalaryUsdMinor: 0,
+        newSalaryUsdMinor: baseSalaryUsdMinor,
+        currency: dto.currency,
+        effectiveDate: dto.hireDate,
+        reason: 'Initial employment offer',
+        changedBy,
+      });
+      await manager.save(SalaryHistory, salaryHistory);
+
+      // 6. Invalidate analytics cache
+      await this.analyticsService.invalidateCache();
+
+      this.logger.log(
+        `New employee ${employeeId} (${savedEmployee.firstName} ${savedEmployee.lastName}) onboarded by ${changedBy}.`,
+      );
+
+      return savedEmployee;
+    });
+  }
+
+  /**
+   * Offboards / soft-deletes an employee (ADR-06).
+   * Sets isActive = false, creates separation audit record, and invalidates analytics cache.
+   */
+  async deactivateEmployee(
+    id: string,
+    changedBy: string,
+  ): Promise<Employee> {
+    return this.dataSource.transaction(async (manager) => {
+      const employee = await manager.findOne(Employee, {
+        where: { id },
+      });
+
+      if (!employee) {
+        throw new NotFoundException(`Employee with ID "${id}" was not found.`);
+      }
+
+      if (!employee.isActive) {
+        throw new BadRequestException(
+          `Employee ${employee.employeeId} (${employee.firstName} ${employee.lastName}) is already deactivated.`,
+        );
+      }
+
+      employee.isActive = false;
+      const updatedEmployee = await manager.save(Employee, employee);
+
+      // Record separation in audit history
+      const salaryHistory = manager.create(SalaryHistory, {
+        employeeId: employee.id,
+        previousSalaryMinor: employee.baseSalaryMinor,
+        newSalaryMinor: 0,
+        previousSalaryUsdMinor: employee.baseSalaryUsdMinor,
+        newSalaryUsdMinor: 0,
+        currency: employee.currency,
+        effectiveDate: new Date().toISOString().split('T')[0],
+        reason: 'Employee offboarding / separation',
+        changedBy,
+      });
+      await manager.save(SalaryHistory, salaryHistory);
+
+      // Invalidate analytics cache
+      await this.analyticsService.invalidateCache();
+
+      this.logger.log(
+        `Employee ${employee.employeeId} (${employee.firstName} ${employee.lastName}) offboarded by ${changedBy}.`,
+      );
+
+      return updatedEmployee;
     });
   }
 }

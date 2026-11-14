@@ -13,14 +13,17 @@ The system must immediately answer:
 2. **Pay Distribution:** How does compensation vary across countries, departments, and job levels (L1–L6)?
 3. **Audit & Change Tracking:** When was an employee's salary last adjusted, by how much, and why?
 
-## 3. Scope (MVP Features)
-* **Employee Compensation Directory:** Fast server-side search (by name/email/employee ID), multi-facet filtering (country, department, level), sorting, and pagination across 10,000 records.
+## 3. Scope (Core Features)
+* **Employee Compensation Directory:** Fast server-side search (by full name, first/last name, email, employee ID), multi-facet filtering (country, department, level, currency), sorting, and pagination across 10,000 records.
 * **Transactional Salary Revisions:** Update an employee's base salary with an effective date and reason, atomically recording an immutable `SalaryHistory` audit entry.
-* **Multi-Currency Normalization:** Store salaries in local currency (`INR`, `USD`, `GBP`, `EUR`, `SGD`) alongside a normalized USD equivalent for accurate cross-border analytics.
+* **Employee Lifecycle Management (Onboarding & Offboarding):**
+  * **Onboard Employee:** `HR_ADMIN` can add a new employee with designated department, country, level, and currency; automatically generates employee ID, computes normalized USD salary, and logs initial salary history.
+  * **Offboard Employee (Soft-Delete):** `HR_ADMIN` can deactivate an employee (`isActive = false`). Soft-delete preserves historical compensation records in `salary_history` while immediately removing the employee from active directory queries and decrementing analytics payroll burn.
+* **Cross-Border Multi-Currency Normalization:** Support cross-border compensation (e.g. employee in India compensated in USD), storing local currency (`INR`, `USD`, `GBP`, `EUR`, `SGD`) alongside normalized USD equivalents.
 * **Org Analytics Dashboard:** Real-time aggregations showing total headcount, total normalized payroll, average compensation by country/department, and level-band distributions.
 * **Role-Based Access Control (RBAC):**
-  * `HR_ADMIN`: Full read/write access (can adjust salaries and add employees).
-  * `HR_VIEWER`: Read-only access to directory and analytics (cannot mutate salary data).
+  * `HR_ADMIN`: Full read/write access (can adjust salaries, onboard new employees, and offboard existing employees).
+  * `HR_VIEWER`: Read-only access to directory and analytics (cannot mutate salary or lifecycle data).
 
 ## 4. Deliberately Out-of-Scope (Non-Goals & Reasoning)
 | Excluded Feature | Reasoning |
