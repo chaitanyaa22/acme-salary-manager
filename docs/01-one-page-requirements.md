@@ -19,7 +19,11 @@ The system must immediately answer:
 * **Employee Lifecycle Management (Onboarding & Offboarding):**
   * **Onboard Employee:** `HR_ADMIN` can add a new employee with designated department, country, level, and currency; automatically generates employee ID, computes normalized USD salary, and logs initial salary history.
   * **Offboard Employee (Soft-Delete):** `HR_ADMIN` can deactivate an employee (`isActive = false`). Soft-delete preserves historical compensation records in `salary_history` while immediately removing the employee from active directory queries and decrementing analytics payroll burn.
-* **Cross-Border Multi-Currency Normalization:** Support cross-border compensation (e.g. employee in India compensated in USD), storing local currency (`INR`, `USD`, `GBP`, `EUR`, `SGD`) alongside normalized USD equivalents.
+* **Cross-Border Multi-Currency Normalization:** Support cross-border compensation (e.g. employee in India compensated in USD), storing local currency (`INR`, `USD`, `GBP`, `EUR`, `SGD`, etc.) alongside normalized USD equivalents.
+* **Dynamic Currency & FX Rate Management:**
+  * Supported currencies and planning exchange rates stored dynamically in PostgreSQL (`exchange_rates` table).
+  * `HR_ADMIN` can register new currencies (e.g. `CAD`, `AUD`, `JPY`, `CHF`) and update corporate planning exchange rates.
+  * Adjusting a currency's exchange rate automatically recalculates active employees' normalized USD compensation and invalidates analytics aggregates.
 * **Org Analytics Dashboard:** Real-time aggregations showing total headcount, total normalized payroll, average compensation by country/department, and level-band distributions.
 * **Role-Based Access Control (RBAC):**
   * `HR_ADMIN`: Full read/write access (can adjust salaries, onboard new employees, and offboard existing employees).

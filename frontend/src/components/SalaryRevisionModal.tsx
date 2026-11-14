@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Employee, UserRole } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Employee, UserRole, ExchangeRate } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { X, AlertCircle, ArrowRight, ShieldAlert } from 'lucide-react';
 
@@ -9,10 +9,11 @@ interface SalaryRevisionModalProps {
   onClose: () => void;
   onSave: (data: { newSalaryMinor: number; effectiveDate: string; reason: string }) => Promise<void>;
   userRole?: UserRole;
+  currencies?: ExchangeRate[];
 }
 
-// Client-side analytical rates to preview USD equivalent in real-time
-const FX_RATES_TO_USD: Record<string, number> = {
+// Fallback baseline FX rates
+const FALLBACK_FX_RATES: Record<string, number> = {
   USD: 1.0,
   EUR: 1.08,
   GBP: 1.28,
@@ -26,6 +27,7 @@ export const SalaryRevisionModal: React.FC<SalaryRevisionModalProps> = ({
   onClose,
   onSave,
   userRole = 'HR_VIEWER',
+  currencies,
 }) => {
   const [newSalaryMajor, setNewSalaryMajor] = useState<string>('');
   const [effectiveDate, setEffectiveDate] = useState<string>(
@@ -34,6 +36,16 @@ export const SalaryRevisionModal: React.FC<SalaryRevisionModalProps> = ({
   const [reason, setReason] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const ratesMap = useMemo(() => {
+    const map: Record<string, number> = { ...FALLBACK_FX_RATES };
+    if (currencies) {
+      currencies.forEach((c) => {
+        map[c.code] = Number(c.rateToUsd);
+      });
+    }
+    return map;
+  }, [currencies]);
 
   useEffect(() => {
     if (employee) {
@@ -54,7 +66,7 @@ export const SalaryRevisionModal: React.FC<SalaryRevisionModalProps> = ({
   const newMinor = Math.round(parsedNewMajor * 100);
 
   // Live preview of normalized USD equivalent
-  const rate = FX_RATES_TO_USD[employee.currency] || 1.0;
+  const rate = ratesMap[employee.currency] || 1.0;
   const previewUsdMinor = Math.round(newMinor * rate);
   const percentageChange = currentMinor > 0
     ? (((newMinor - currentMinor) / currentMinor) * 100).toFixed(1)

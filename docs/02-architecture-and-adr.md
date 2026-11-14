@@ -93,3 +93,19 @@ graph TD
   * Preserves 100% of historical audit trails and historical compensation data.
   * Deactivated employees vanish from active directory views and no longer burden payroll aggregation queries.
   * Re-activation remains technically feasible without data loss.
+
+### ADR-07: Dynamic Database-Driven Exchange Rates & Extensible Currencies
+* **Status:** Accepted & Implemented
+* **Context:** Hardcoding a static list of 5 currencies as a database ENUM limits international expansion and requires code redeployments to support new hiring markets or adjust corporate financial planning rates.
+* **Decision:**
+  1. **Persistence Schema (`exchange_rates`):** Introduce a database-backed table storing `code` (`VARCHAR(3)` PK), `rate_to_usd` (`NUMERIC(12, 6)`), `name` (`VARCHAR(50)`), `symbol` (`VARCHAR(5)`), and `is_active` (`BOOLEAN`).
+  2. **Decoupled Column Types:** Store currency as `VARCHAR(10)` in `employees` and `salary_history` rather than rigid database ENUMs.
+  3. **Currency Management API:**
+     * `GET /api/currencies`: Public read for all authenticated roles (`HR_ADMIN`, `HR_VIEWER`).
+     * `POST /api/currencies`: Restricted to `HR_ADMIN` to register new currencies (e.g. `CAD`, `AUD`, `JPY`).
+     * `PATCH /api/currencies/:code`: Restricted to `HR_ADMIN` to update exchange rates.
+  4. **Dynamic FX Recalculation & Cache Busting:** When a currency's exchange rate is updated, active employee records denominated in that currency have their `base_salary_usd_minor` recalculated, and all analytics caches are immediately evicted.
+  5. **Dynamic Frontend Selectors:** Frontend dynamically loads supported currencies and rates from `GET /api/currencies` into application state, driving dropdowns and live USD previews.
+* **Consequences:**
+  * Zero code deployments required to onboard new corporate currencies or revise annual planning rates.
+  * 100% backward-compatible with seeded data and minor-unit financial precision.

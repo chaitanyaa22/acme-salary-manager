@@ -10,6 +10,9 @@ import {
   CountryAnalytics,
   DepartmentAnalytics,
   LevelAnalytics,
+  ExchangeRate,
+  CreateCurrencyInput,
+  UpdateCurrencyInput,
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -143,6 +146,25 @@ class ApiClient {
 
   async getAnalyticsByLevel(): Promise<LevelAnalytics[]> {
     return this.request<LevelAnalytics[]>('/analytics/by-level');
+  }
+
+  // Currency & Exchange Rate APIs (ADR-07)
+  async getCurrencies(): Promise<ExchangeRate[]> {
+    return this.request<ExchangeRate[]>('/currencies');
+  }
+
+  async createCurrency(data: CreateCurrencyInput): Promise<ExchangeRate> {
+    return this.request<ExchangeRate>('/currencies', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCurrency(code: string, data: UpdateCurrencyInput): Promise<ExchangeRate> {
+    return this.request<ExchangeRate>(`/currencies/${code}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 }
 

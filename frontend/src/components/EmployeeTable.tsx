@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Employee, UserRole, QueryEmployeesParams, PaginationMeta } from '../types';
+import { Employee, UserRole, QueryEmployeesParams, PaginationMeta, ExchangeRate } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { DeactivateEmployeeModal } from './DeactivateEmployeeModal';
 import {
@@ -16,6 +16,7 @@ import {
   RotateCcw,
   UserPlus,
   UserMinus,
+  Coins,
 } from 'lucide-react';
 
 interface EmployeeTableProps {
@@ -27,6 +28,8 @@ interface EmployeeTableProps {
   onViewHistory: (employee: Employee) => void;
   onOpenAddEmployee?: () => void;
   onDeactivateEmployee?: (employee: Employee) => Promise<void> | void;
+  onOpenCurrencies?: () => void;
+  currencies?: ExchangeRate[];
   isLoading: boolean;
   userRole?: UserRole;
 }
@@ -43,7 +46,6 @@ const DEPARTMENTS = [
   'Operations',
 ] as const;
 const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'] as const;
-const CURRENCIES = ['USD', 'INR', 'GBP', 'EUR', 'SGD'] as const;
 
 /**
  * High-fidelity Skeleton Row with matching column widths, heights, and alignments.
@@ -224,12 +226,21 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
   onViewHistory,
   onOpenAddEmployee,
   onDeactivateEmployee,
+  onOpenCurrencies,
+  currencies,
   isLoading,
   userRole = 'HR_VIEWER',
 }) => {
   const [searchInput, setSearchInput] = useState<string>(params.search || '');
   const [employeeToDeactivate, setEmployeeToDeactivate] = useState<Employee | null>(null);
   const isAdmin = userRole === 'HR_ADMIN';
+
+  const availableCurrencies = useMemo(() => {
+    if (currencies && currencies.length > 0) {
+      return currencies.filter((c) => c.isActive).map((c) => c.code);
+    }
+    return ['USD', 'INR', 'GBP', 'EUR', 'SGD'];
+  }, [currencies]);
 
   // Synchronize local input if search query is reset externally
   useEffect(() => {
@@ -330,6 +341,19 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
               </button>
             )}
 
+            {/* Currency Rates Button */}
+            {onOpenCurrencies && (
+              <button
+                onClick={onOpenCurrencies}
+                disabled={isLoading}
+                title="Manage corporate FX rates & currencies"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 font-semibold rounded-lg shadow-xs transition-colors"
+              >
+                <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Currency Rates</span>
+              </button>
+            )}
+
             {/* Onboard New Employee Button (HR_ADMIN only) */}
             {isAdmin && onOpenAddEmployee && (
               <button
@@ -394,7 +418,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = React.memo(({
             className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">All Currencies</option>
-            {CURRENCIES.map((cur) => (
+            {availableCurrencies.map((cur) => (
               <option key={cur} value={cur}>{cur}</option>
             ))}
           </select>

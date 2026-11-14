@@ -4,12 +4,10 @@ import {
   Min,
   Max,
   IsString,
-  IsEnum,
   IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Currency } from '../../../common/enums/currency.enum.js';
 
 export class QueryEmployeesDto {
   @ApiPropertyOptional({ default: 1, minimum: 1, description: 'Page number' })
@@ -54,10 +52,10 @@ export class QueryEmployeesDto {
   @IsString()
   level?: string;
 
-  @ApiPropertyOptional({ enum: Currency, description: 'Filter by currency' })
+  @ApiPropertyOptional({ description: 'Filter by currency code (e.g. USD, EUR, GBP, SGD, INR, CAD)' })
   @IsOptional()
-  @IsEnum(Currency)
-  currency?: Currency;
+  @IsString()
+  currency?: string;
 
   @ApiPropertyOptional({
     default: 'employeeId',

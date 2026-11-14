@@ -9,6 +9,9 @@ import {
   CountryAnalytics,
   DepartmentAnalytics,
   LevelAnalytics,
+  ExchangeRate,
+  CreateCurrencyInput,
+  UpdateCurrencyInput,
 } from './types';
 import { api } from './services/api';
 import { Header } from './components/Header';
@@ -17,6 +20,7 @@ import { EmployeeTable } from './components/EmployeeTable';
 import { SalaryRevisionModal } from './components/SalaryRevisionModal';
 import { AuditDrawer } from './components/AuditDrawer';
 import { AddEmployeeModal } from './components/AddEmployeeModal';
+import { CurrencyRatesModal } from './components/CurrencyRatesModal';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { LoginForm } from './components/LoginForm';
 
@@ -52,6 +56,8 @@ export function App() {
   const [selectedReviseEmployee, setSelectedReviseEmployee] = useState<Employee | null>(null);
   const [selectedHistoryEmployee, setSelectedHistoryEmployee] = useState<Employee | null>(null);
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState<boolean>(false);
+  const [isCurrenciesOpen, setIsCurrenciesOpen] = useState<boolean>(false);
+  const [currencies, setCurrencies] = useState<ExchangeRate[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   // Demo access configuration: set VITE_ENABLE_DEMO=false to disable
@@ -155,12 +161,24 @@ export function App() {
     initAuth();
   }, [isDemoEnabled]);
 
+  // Fetch supported currencies (ADR-07)
+  const loadCurrencies = useCallback(async () => {
+    if (!currentUser) return;
+    try {
+      const data = await api.getCurrencies();
+      setCurrencies(data);
+    } catch (err: any) {
+      console.warn('Failed to load currencies:', err.message);
+    }
+  }, [currentUser]);
+
   // Fetch Analytics data on login/user switch
   useEffect(() => {
     if (currentUser) {
       loadAnalytics();
+      loadCurrencies();
     }
-  }, [currentUser, loadAnalytics]);
+  }, [currentUser, loadAnalytics, loadCurrencies]);
 
   // Fetch Employees directory when user or query parameters (filters, page, sort) change
   useEffect(() => {
@@ -209,6 +227,18 @@ export function App() {
     } catch (err: any) {
       setGlobalError(`Failed to offboard ${employee.firstName} ${employee.lastName}: ${err.message}`);
     }
+  };
+
+  // Handle currency exchange rate updates (ADR-07)
+  const handleUpdateCurrencyRate = async (code: string, data: UpdateCurrencyInput) => {
+    await api.updateCurrency(code, data);
+    await Promise.all([loadCurrencies(), loadEmployees(), loadAnalytics()]);
+  };
+
+  // Handle registering a new currency (ADR-07)
+  const handleCreateCurrency = async (data: CreateCurrencyInput) => {
+    await api.createCurrency(data);
+    await loadCurrencies();
   };
 
   return (
@@ -295,6 +325,8 @@ export function App() {
                 onViewHistory={handleViewHistory}
                 onOpenAddEmployee={() => setIsAddEmployeeOpen(true)}
                 onDeactivateEmployee={handleDeactivateEmployee}
+                onOpenCurrencies={() => setIsCurrenciesOpen(true)}
+                currencies={currencies}
                 isLoading={tableLoading}
                 userRole={currentUser?.role}
               />
@@ -309,6 +341,7 @@ export function App() {
         onClose={() => setIsAddEmployeeOpen(false)}
         onSave={handleOnboardEmployee}
         userRole={currentUser?.role}
+        currencies={currencies}
       />
 
       {/* Salary Revision Modal (HR_ADMIN only) */}
@@ -317,6 +350,17 @@ export function App() {
         isOpen={!!selectedReviseEmployee}
         onClose={() => setSelectedReviseEmployee(null)}
         onSave={handleSaveSalaryRevision}
+        userRole={currentUser?.role}
+        currencies={currencies}
+      />
+
+      {/* Corporate Currency & FX Rates Modal (ADR-07) */}
+      <CurrencyRatesModal
+        isOpen={isCurrenciesOpen}
+        onClose={() => setIsCurrenciesOpen(false)}
+        currencies={currencies}
+        onUpdateRate={handleUpdateCurrencyRate}
+        onCreateCurrency={handleCreateCurrency}
         userRole={currentUser?.role}
       />
 

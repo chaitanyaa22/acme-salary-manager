@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
 import { EmployeesService } from '../src/modules/employees/employees.service.js';
 import { CurrencyService } from '../src/modules/currency/currency.service.js';
 import { AnalyticsService } from '../src/modules/analytics/analytics.service.js';

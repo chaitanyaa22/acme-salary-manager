@@ -157,4 +157,42 @@ describe('CurrencyService', () => {
       expect(() => service.toMinorUnits(NaN)).toThrow(BadRequestException);
     });
   });
+
+  describe('Dynamic Currencies & Extensible Rates (ADR-07)', () => {
+    it('should list all default supported currencies with metadata', async () => {
+      const currencies = await service.getAllCurrencies();
+      expect(currencies.length).toBeGreaterThanOrEqual(5);
+      const codes = currencies.map((c) => c.code);
+      expect(codes).toContain('USD');
+      expect(codes).toContain('EUR');
+      expect(codes).toContain('GBP');
+      expect(codes).toContain('SGD');
+      expect(codes).toContain('INR');
+    });
+
+    it('should register a new currency dynamically and convert amounts accurately', async () => {
+      const newCurrency = await service.createCurrency({
+        code: 'CAD',
+        name: 'Canadian Dollar',
+        symbol: 'CA$',
+        rateToUsd: 0.73,
+      });
+
+      expect(newCurrency.code).toBe('CAD');
+      expect(service.getSupportedCurrencies()).toContain('CAD');
+      expect(service.getExchangeRateToUsd('CAD')).toBe(0.73);
+
+      // 100,000 CAD cents * 0.73 = 73,000 USD cents
+      const usdMinor = service.toUsdMinor(100_000, 'CAD');
+      expect(usdMinor).toBe(73_000);
+    });
+
+    it('should update an existing currency rate dynamically', async () => {
+      await service.updateCurrency('GBP', { rateToUsd: 1.30 });
+      expect(service.getExchangeRateToUsd('GBP')).toBe(1.30);
+
+      // 100,000 GBP pence * 1.30 = 130,000 USD cents
+      expect(service.toUsdMinor(100_000, 'GBP')).toBe(130_000);
+    });
+  });
 });

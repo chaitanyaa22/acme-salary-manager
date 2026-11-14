@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CreateEmployeeInput, CurrencyCode, UserRole } from '../types';
+import React, { useState, useMemo } from 'react';
+import { CreateEmployeeInput, CurrencyCode, UserRole, ExchangeRate } from '../types';
 import { formatCurrency } from '../lib/utils';
 import { X, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
 
@@ -8,6 +8,7 @@ interface AddEmployeeModalProps {
   onClose: () => void;
   onSave: (data: CreateEmployeeInput) => Promise<void>;
   userRole?: UserRole;
+  currencies?: ExchangeRate[];
 }
 
 const COUNTRIES = ['United States', 'India', 'United Kingdom', 'Germany', 'Singapore'] as const;
@@ -22,9 +23,9 @@ const DEPARTMENTS = [
   'Operations',
 ] as const;
 const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'] as const;
-const CURRENCIES: CurrencyCode[] = ['USD', 'INR', 'GBP', 'EUR', 'SGD'];
+const FALLBACK_CURRENCIES: CurrencyCode[] = ['USD', 'INR', 'GBP', 'EUR', 'SGD'];
 
-const FX_RATES_TO_USD: Record<CurrencyCode, number> = {
+const FALLBACK_FX_RATES: Record<string, number> = {
   USD: 1.0,
   EUR: 1.08,
   GBP: 1.28,
@@ -48,6 +49,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   onClose,
   onSave,
   userRole = 'HR_VIEWER',
+  currencies,
 }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -63,6 +65,23 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const availableCurrencies = useMemo(() => {
+    if (currencies && currencies.length > 0) {
+      return currencies.filter((c) => c.isActive).map((c) => c.code);
+    }
+    return FALLBACK_CURRENCIES;
+  }, [currencies]);
+
+  const ratesMap = useMemo(() => {
+    const map: Record<string, number> = { ...FALLBACK_FX_RATES };
+    if (currencies) {
+      currencies.forEach((c) => {
+        map[c.code] = Number(c.rateToUsd);
+      });
+    }
+    return map;
+  }, [currencies]);
 
   const resetForm = () => {
     setFirstName('');
@@ -88,7 +107,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
   const isAdmin = userRole === 'HR_ADMIN';
   const parsedSalaryMajor = parseFloat(salaryMajor) || 0;
   const salaryMinor = Math.round(parsedSalaryMajor * 100);
-  const rate = FX_RATES_TO_USD[currency] || 1.0;
+  const rate = ratesMap[currency] || 1.0;
   const previewUsdMinor = Math.round(salaryMinor * rate);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -292,7 +311,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {CURRENCIES.map((cur) => (
+                {availableCurrencies.map((cur) => (
                   <option key={cur} value={cur}>{cur}</option>
                 ))}
               </select>

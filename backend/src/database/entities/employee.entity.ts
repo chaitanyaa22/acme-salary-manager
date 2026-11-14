@@ -14,6 +14,7 @@ import type { SalaryHistory } from './salary-history.entity.js';
 @Entity('employees')
 @Index('idx_employees_country_dept_level', ['country', 'department', 'level'])
 @Index('idx_employees_base_salary_usd_minor', ['baseSalaryUsdMinor'])
+@Index('idx_employees_currency_active', ['currency', 'isActive'])
 export class Employee {
   @PrimaryGeneratedColumn('uuid')
   id: string;

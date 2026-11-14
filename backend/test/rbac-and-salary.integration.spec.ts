@@ -3,6 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { EmployeesController } from '../src/modules/employees/employees.controller.js';
 import { EmployeesService } from '../src/modules/employees/employees.service.js';
+import { CurrenciesController } from '../src/modules/currency/currencies.controller.js';
+import { CurrencyService } from '../src/modules/currency/currency.service.js';
 import { RolesGuard } from '../src/common/guards/roles.guard.js';
 import { UserRole } from '../src/common/enums/user-role.enum.js';
 import { Currency } from '../src/common/enums/currency.enum.js';
@@ -219,6 +221,84 @@ describe('RBAC & Salary Revisions Integration', () => {
 
     it('should FORBID HR_VIEWER from deactivating an employee (403 Forbidden)', () => {
       const context = createMockContext(controller.deactivateEmployee, {
+        id: 'viewer-id',
+        email: 'viewer@acme.com',
+        role: UserRole.HR_VIEWER,
+      });
+
+      expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Currency Management RBAC Enforcement (ADR-07)', () => {
+    let currenciesController: CurrenciesController;
+    let mockCurrencyService: Partial<CurrencyService>;
+
+    beforeEach(() => {
+      mockCurrencyService = {
+        getAllCurrencies: vi.fn().mockResolvedValue([
+          { code: 'USD', name: 'US Dollar', symbol: '$', rateToUsd: 1.0, isActive: true },
+        ]),
+        createCurrency: vi.fn().mockResolvedValue({
+          code: 'CAD',
+          name: 'Canadian Dollar',
+          symbol: 'CA$',
+          rateToUsd: 0.73,
+          isActive: true,
+        }),
+        updateCurrency: vi.fn().mockResolvedValue({
+          code: 'CAD',
+          name: 'Canadian Dollar',
+          symbol: 'CA$',
+          rateToUsd: 0.75,
+          isActive: true,
+        }),
+      };
+      currenciesController = new CurrenciesController(mockCurrencyService as CurrencyService);
+    });
+
+    const createCurrencyContext = (handler: Function, user?: any): ExecutionContext => {
+      return {
+        getHandler: () => handler,
+        getClass: () => CurrenciesController,
+        switchToHttp: () => ({
+          getRequest: () => ({ user }),
+        }),
+      } as unknown as ExecutionContext;
+    };
+
+    it('should ALLOW HR_ADMIN to create a new currency', () => {
+      const context = createCurrencyContext(currenciesController.create, {
+        id: 'admin-id',
+        email: 'admin@acme.com',
+        role: UserRole.HR_ADMIN,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+    });
+
+    it('should FORBID HR_VIEWER from creating a new currency (403 Forbidden)', () => {
+      const context = createCurrencyContext(currenciesController.create, {
+        id: 'viewer-id',
+        email: 'viewer@acme.com',
+        role: UserRole.HR_VIEWER,
+      });
+
+      expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
+    });
+
+    it('should ALLOW HR_ADMIN to update currency exchange rate', () => {
+      const context = createCurrencyContext(currenciesController.update, {
+        id: 'admin-id',
+        email: 'admin@acme.com',
+        role: UserRole.HR_ADMIN,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+    });
+
+    it('should FORBID HR_VIEWER from updating currency exchange rate (403 Forbidden)', () => {
+      const context = createCurrencyContext(currenciesController.update, {
         id: 'viewer-id',
         email: 'viewer@acme.com',
         role: UserRole.HR_VIEWER,

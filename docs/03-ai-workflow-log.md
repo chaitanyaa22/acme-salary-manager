@@ -90,3 +90,6 @@ Following the initial MVP deployment, iterative reviewer interaction drove four 
 6. **Country Analytics Aggregation Normalization:**
    * *Issue:* Decoupling country from currency (allowing cross-border contracts) caused `GET /api/analytics/by-country` to return repetitive country entries because the SQL query previously grouped by `(country, currency)`.
    * *Fix:* Updated `AnalyticsService.getByCountry()` to group strictly by `country` with `MODE() WITHIN GROUP (ORDER BY currency) AS "currency"`, producing exactly 1 unified aggregation per global operating territory.
+7. **Dynamic Database-Driven Currencies & Exchange Rates (ADR-07):**
+   * *Requirement:* Move beyond the initial 5 hardcoded currencies (`USD`, `EUR`, `GBP`, `SGD`, `INR`) by allowing `HR_ADMIN` to configure new currencies and adjust planning rates via dedicated APIs and UI.
+   * *Implementation:* Added `ExchangeRate` database entity, `CurrenciesController` with full RBAC protection, rate-update employee USD recalibration with cache eviction, and dynamic UI selectors with a dedicated FX management modal.

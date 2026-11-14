@@ -5,7 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
-import { User, Employee, SalaryHistory } from './database/entities/index.js';
+import { User, Employee, SalaryHistory, ExchangeRate } from './database/entities/index.js';
 import { CurrencyModule } from './modules/currency/currency.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { EmployeesModule } from './modules/employees/employees.module.js';
@@ -37,7 +37,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
         username: configService.get<string>('DB_USERNAME', 'acme_user'),
         password: configService.get<string>('DB_PASSWORD', 'acme_password'),
         database: configService.get<string>('DB_NAME', 'acme_salaries'),
-        entities: [User, Employee, SalaryHistory],
+        entities: [User, Employee, SalaryHistory, ExchangeRate],
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
         logging: configService.get<string>('DB_LOGGING') === 'true',
       }),

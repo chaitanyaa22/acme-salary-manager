@@ -1,6 +1,30 @@
 export type UserRole = 'HR_ADMIN' | 'HR_VIEWER';
 
-export type CurrencyCode = 'USD' | 'INR' | 'GBP' | 'EUR' | 'SGD';
+export type CurrencyCode = string;
+
+export interface ExchangeRate {
+  code: string;
+  name: string;
+  symbol: string;
+  rateToUsd: number;
+  isActive: boolean;
+  updatedAt?: string;
+}
+
+export interface CreateCurrencyInput {
+  code: string;
+  name: string;
+  symbol?: string;
+  rateToUsd: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCurrencyInput {
+  rateToUsd?: number;
+  name?: string;
+  symbol?: string;
+  isActive?: boolean;
+}
 
 export interface User {
   id: string;
