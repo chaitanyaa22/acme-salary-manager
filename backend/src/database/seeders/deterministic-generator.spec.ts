@@ -78,16 +78,22 @@ describe('DeterministicGenerator', () => {
       LEVELS.forEach((l) => expect(levels.has(l)).toBe(true));
     });
 
-    it('should map countries to their respective currencies accurately', () => {
-      const employees = generator.generateEmployees(100, 42);
+    it('should support cross-border compensation with exactly 20% (2,000 per 10k) having mismatched country and currency', () => {
+      const employees = generator.generateEmployees(10000, 42);
 
-      employees.forEach((emp) => {
-        if (emp.country === 'United States') expect(emp.currency).toBe(Currency.USD);
-        if (emp.country === 'India') expect(emp.currency).toBe(Currency.INR);
-        if (emp.country === 'United Kingdom') expect(emp.currency).toBe(Currency.GBP);
-        if (emp.country === 'Germany') expect(emp.currency).toBe(Currency.EUR);
-        if (emp.country === 'Singapore') expect(emp.currency).toBe(Currency.SGD);
-      });
+      const nativeCurrencyMap: Record<string, Currency> = {
+        'United States': Currency.USD,
+        India: Currency.INR,
+        'United Kingdom': Currency.GBP,
+        Germany: Currency.EUR,
+        Singapore: Currency.SGD,
+      };
+
+      const mismatched = employees.filter((emp) => emp.currency !== nativeCurrencyMap[emp.country!]);
+      expect(mismatched).toHaveLength(2000);
+
+      const matching = employees.filter((emp) => emp.currency === nativeCurrencyMap[emp.country!]);
+      expect(matching).toHaveLength(8000);
     });
 
     it('should ensure all salaries are integer minor units with exact USD normalization', () => {

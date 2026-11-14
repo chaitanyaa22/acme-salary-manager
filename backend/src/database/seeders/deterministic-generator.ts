@@ -227,8 +227,20 @@ export class DeterministicGenerator {
       const employeeId = `ACM-${i.toString().padStart(5, '0')}`;
       const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${i}@acme.com`;
 
-      // Salary calculation in local currency major units, then converted to minor units
-      const salaryRange = countryConfig.levelSalariesMajor[level];
+      // Provision for cross-border compensation (exactly 20% of employees, or 2,000 out of 10,000)
+      // where the employee resides in one country but is compensated in a different currency.
+      let currency = countryConfig.currency;
+      let salaryRangeConfig = countryConfig;
+
+      if (i % 5 === 0) {
+        const otherCountries = COUNTRIES.filter((c) => c.currency !== countryConfig.currency);
+        const altIndex = Math.floor(random() * otherCountries.length);
+        salaryRangeConfig = otherCountries[altIndex];
+        currency = salaryRangeConfig.currency;
+      }
+
+      // Salary calculation in chosen currency major units, then converted to minor units
+      const salaryRange = salaryRangeConfig.levelSalariesMajor[level];
       const salarySpread = salaryRange.max - salaryRange.min;
       const salaryMajor = Math.floor(salaryRange.min + random() * salarySpread);
       // Round to nearest 500 for clean compensation bands
@@ -238,7 +250,7 @@ export class DeterministicGenerator {
       // Normalized USD minor units computed deterministically at seed time (ADR-02)
       const baseSalaryUsdMinor = this.currencyService.toUsdMinor(
         baseSalaryMinor,
-        countryConfig.currency,
+        currency,
       );
 
       // Deterministic hire date within the past 5 years
@@ -256,7 +268,7 @@ export class DeterministicGenerator {
         department,
         level,
         jobTitle,
-        currency: countryConfig.currency,
+        currency,
         baseSalaryMinor,
         baseSalaryUsdMinor,
         hireDate,
