@@ -8,6 +8,8 @@ import { AppService } from './app.service.js';
 import { User, Employee, SalaryHistory } from './database/entities/index.js';
 import { CurrencyModule } from './modules/currency/currency.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { EmployeesModule } from './modules/employees/employees.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { AuthModule } from './modules/auth/auth.module.js';
     }),
     CurrencyModule,
     AuthModule,
+    EmployeesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
