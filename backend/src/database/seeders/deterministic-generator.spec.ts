@@ -119,6 +119,14 @@ describe('DeterministicGenerator', () => {
       expect(employees[0].employeeId).toBe('ACM-00001');
       expect(employees[9].employeeId).toBe('ACM-00010');
     });
+
+    it('should generate emails with firstname.lastname.employee_id@acme.com format', () => {
+      const employees = generator.generateEmployees(5, 42);
+      employees.forEach((emp) => {
+        const expectedEmail = `${emp.firstName!.toLowerCase()}.${emp.lastName!.toLowerCase()}.${emp.employeeId!.toLowerCase()}@acme.com`;
+        expect(emp.email).toBe(expectedEmail);
+      });
+    });
   });
 
   describe('generateSalaryHistories()', () => {

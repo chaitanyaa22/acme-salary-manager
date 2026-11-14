@@ -225,7 +225,7 @@ export class DeterministicGenerator {
       const firstName = FIRST_NAMES[Math.floor(random() * FIRST_NAMES.length)];
       const lastName = LAST_NAMES[Math.floor(random() * LAST_NAMES.length)];
       const employeeId = `ACM-${i.toString().padStart(5, '0')}`;
-      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${i}@acme.com`;
+      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${employeeId.toLowerCase()}@acme.com`;
 
       // Provision for cross-border compensation (exactly 20% of employees, or 2,000 out of 10,000)
       // where the employee resides in one country but is compensated in a different currency.
