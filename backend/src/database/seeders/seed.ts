@@ -15,23 +15,30 @@ import { SeederService } from './seeder.service.js';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'acme_user'),
-        password: configService.get<string>('DB_PASSWORD', 'acme_password'),
-        database: configService.get<string>('DB_NAME', 'acme_salaries'),
-        entities: [User, Employee, SalaryHistory],
-        synchronize: true, // Auto-create schema if not yet present
-        logging: false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const useSsl =
+          configService.get<string>('DB_SSL') === 'true' ||
+          configService.get<string>('NODE_ENV') === 'production';
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: configService.get<number>('DB_PORT', 5432),
+          username: configService.get<string>('DB_USERNAME', 'acme_user'),
+          password: configService.get<string>('DB_PASSWORD', 'acme_password'),
+          database: configService.get<string>('DB_NAME', 'acme_salaries'),
+          entities: [User, Employee, SalaryHistory],
+          synchronize: true, // Auto-create schema if not yet present
+          logging: false,
+          ssl: useSsl ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
     TypeOrmModule.forFeature([User, Employee, SalaryHistory]),
   ],
   providers: [SeederService],
 })
-class SeederModule {}
+class SeederModule { }
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(SeederModule);

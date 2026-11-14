@@ -30,17 +30,25 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'acme_user'),
-        password: configService.get<string>('DB_PASSWORD', 'acme_password'),
-        database: configService.get<string>('DB_NAME', 'acme_salaries'),
-        entities: [User, Employee, SalaryHistory],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
-        logging: configService.get<string>('DB_LOGGING') === 'true',
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProd = configService.get<string>('NODE_ENV') === 'production';
+        const useSsl =
+          configService.get<string>('DB_SSL') === 'true' || isProd;
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: configService.get<number>('DB_PORT', 5432),
+          username: configService.get<string>('DB_USERNAME', 'acme_user'),
+          password: configService.get<string>('DB_PASSWORD', 'acme_password'),
+          database: configService.get<string>('DB_NAME', 'acme_salaries'),
+          entities: [User, Employee, SalaryHistory],
+          synchronize:
+            configService.get<string>('DB_SYNC') === 'true' || !isProd,
+          logging: configService.get<string>('DB_LOGGING') === 'true',
+          ssl: useSsl ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
     CurrencyModule,
     AuthModule,
@@ -50,4 +58,4 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
