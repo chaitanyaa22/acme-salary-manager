@@ -35,41 +35,41 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs">
-      <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-md h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200 transition-colors">
         {/* Drawer Header */}
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/90">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg">
               <History className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
                 Compensation Audit Trail
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Immutable record history (ADR-04)
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-md"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Employee Summary Card */}
-        <div className="px-6 py-4 bg-white border-b border-slate-100">
+        <div className="px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div>
-              <span className="font-mono text-xs font-bold text-blue-600">
+              <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
                 {employee.employeeId}
               </span>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {employee.firstName} {employee.lastName}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {employee.jobTitle} • {employee.department} ({employee.level})
               </p>
             </div>
@@ -77,10 +77,10 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
               <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">
                 Current Salary
               </span>
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {formatCurrency(employee.baseSalaryMinor, employee.currency)}
               </span>
-              <span className="text-[11px] text-slate-500 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                 ≈ {formatCurrency(employee.baseSalaryUsdMinor, 'USD')}
               </span>
             </div>
@@ -92,24 +92,24 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-slate-100 rounded-xl" />
+                <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-xl" />
               ))}
             </div>
           ) : error ? (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center gap-2">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 rounded-lg text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs">
               <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="font-semibold text-slate-600">No revisions on record</p>
+              <p className="font-semibold text-slate-600 dark:text-slate-400">No revisions on record</p>
               <p className="mt-1">
                 Employee is currently compensated at their initial hire agreement.
               </p>
             </div>
           ) : (
-            <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
+            <div className="relative border-l-2 border-slate-200 dark:border-slate-800 ml-3 space-y-6">
               {history.map((record) => {
                 const diff = record.newSalaryMinor - record.previousSalaryMinor;
                 const isIncrease = diff >= 0;
@@ -121,7 +121,7 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
                   <div key={record.id} className="relative pl-6">
                     {/* Timeline Node Icon */}
                     <div
-                      className={`absolute -left-2.5 top-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] shadow-xs ${
+                      className={`absolute -left-2.5 top-1 w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-[10px] shadow-xs ${
                         isIncrease ? 'bg-emerald-500' : 'bg-rose-500'
                       }`}
                     >
@@ -133,16 +133,16 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
                     </div>
 
                     {/* Record Card */}
-                    <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 shadow-xs space-y-2">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700/60 rounded-xl p-3.5 shadow-xs space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-slate-700">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                           {formatDate(record.effectiveDate)}
                         </span>
                         <span
                           className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
                             isIncrease
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                              : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
                           }`}
                         >
                           {isIncrease ? '+' : ''}
@@ -151,29 +151,29 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
                       </div>
 
                       {/* Salary Change Numbers */}
-                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
                         <div>
                           <span className="text-[10px] text-slate-400 block">Previous</span>
-                          <span className="text-slate-600 line-through">
+                          <span className="text-slate-600 dark:text-slate-400 line-through">
                             {formatCurrency(record.previousSalaryMinor, record.currency)}
                           </span>
                         </div>
                         <span className="text-slate-400 font-bold">→</span>
                         <div className="text-right">
                           <span className="text-[10px] text-slate-400 block">Revised</span>
-                          <span className="font-bold text-slate-900">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">
                             {formatCurrency(record.newSalaryMinor, record.currency)}
                           </span>
                         </div>
                       </div>
 
                       {/* Normalized USD */}
-                      <p className="text-[11px] text-slate-500 text-right">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right">
                         Normalized: {formatCurrency(record.newSalaryUsdMinor, 'USD')}
                       </p>
 
                       {/* Justification Reason */}
-                      <div className="bg-white border border-slate-200/70 rounded-lg p-2 text-xs text-slate-700 italic">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700/60 rounded-lg p-2 text-xs text-slate-700 dark:text-slate-300 italic">
                         "{record.reason}"
                       </div>
 
@@ -193,10 +193,10 @@ export const AuditDrawer: React.FC<AuditDrawerProps> = ({
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90">
           <button
             onClick={onClose}
-            className="w-full py-2 bg-white border border-slate-300 text-xs font-semibold text-slate-700 rounded-lg hover:bg-slate-100 transition-colors shadow-xs"
+            className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-xs"
           >
             Close Audit Trail
           </button>

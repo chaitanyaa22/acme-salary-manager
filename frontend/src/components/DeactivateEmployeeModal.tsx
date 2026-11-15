@@ -45,16 +45,16 @@ export const DeactivateEmployeeModal: React.FC<DeactivateEmployeeModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full overflow-hidden flex flex-col transition-colors">
         {/* Header with Danger Warning Styling */}
-        <div className="px-6 py-4 border-b border-rose-100 bg-rose-50/70 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-rose-100 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/40 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-rose-100 text-rose-700 rounded-lg">
+            <div className="p-2 bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 rounded-lg">
               <UserMinus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Confirm Offboarding</h3>
-              <p className="text-xs text-rose-600 font-medium">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Confirm Offboarding</h3>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
                 Deactivate employee profile
               </p>
             </div>
@@ -62,7 +62,7 @@ export const DeactivateEmployeeModal: React.FC<DeactivateEmployeeModalProps> = (
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-white/80 transition-colors"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/80 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -71,29 +71,29 @@ export const DeactivateEmployeeModal: React.FC<DeactivateEmployeeModalProps> = (
         {/* Modal Body */}
         <div className="p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-2 text-xs text-rose-700">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-lg flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Employee Summary Card */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {employee.firstName} {employee.lastName}
               </span>
-              <span className="px-2 py-0.5 bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold rounded">
+              <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-semibold rounded">
                 {employee.employeeId}
               </span>
             </div>
-            <div className="text-xs text-slate-600 space-y-0.5">
+            <div className="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
               <p>
-                <span className="font-semibold text-slate-700">{employee.jobTitle}</span> &bull; {employee.department} ({employee.level})
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{employee.jobTitle}</span> &bull; {employee.department} ({employee.level})
               </p>
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">
                 {employee.country} &bull; Base Salary:{' '}
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-slate-700 dark:text-slate-300">
                   {formatCurrency(employee.baseSalaryMinor, employee.currency)}
                 </span>
               </p>
@@ -101,16 +101,16 @@ export const DeactivateEmployeeModal: React.FC<DeactivateEmployeeModalProps> = (
           </div>
 
           {/* Regulatory & Audit Note */}
-          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-semibold text-amber-900">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
                 Soft-Deletion & Audit Compliance (ADR-06)
               </p>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                This employee will be deactivated (<code className="font-mono bg-amber-100 px-1 py-0.5 rounded">isActive = false</code>) and removed from active directory queries and organizational headcount metrics.
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                This employee will be deactivated (<code className="font-mono bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">isActive = false</code>) and removed from active directory queries and organizational headcount metrics.
               </p>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
                 All historical salary records will be strictly preserved for audit integrity.
               </p>
             </div>
@@ -118,12 +118,12 @@ export const DeactivateEmployeeModal: React.FC<DeactivateEmployeeModalProps> = (
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg hover:bg-slate-200/60 transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
           >
             Cancel
           </button>
