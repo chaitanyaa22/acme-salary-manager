@@ -1,6 +1,7 @@
 import React from 'react';
 import { User } from '../types';
 import { ShieldCheck, Eye, LogOut, CheckCircle2, Building2 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   user: User | null;
@@ -18,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   showDemoBar = true,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors duration-150">
       {/* Reviewer Quick-Switch Demo Bar */}
       {showDemoBar && (
         <div className="bg-slate-900 text-slate-100 px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs">
@@ -39,11 +40,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onLoginDemo('HR_ADMIN')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
-                  user?.role === 'HR_ADMIN'
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                }`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${user?.role === 'HR_ADMIN'
+                  ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span className="sm:hidden">Admin</span>
@@ -56,11 +56,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onLoginDemo('HR_VIEWER')}
                 disabled={isLoading}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${
-                  user?.role === 'HR_VIEWER'
-                    ? 'bg-amber-600 text-white ring-2 ring-amber-400'
-                    : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                }`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md font-medium text-[11px] sm:text-xs transition-colors ${user?.role === 'HR_VIEWER'
+                  ? 'bg-amber-600 text-white ring-2 ring-amber-400'
+                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  }`}
               >
                 <Eye className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                 <span className="sm:hidden">Viewer</span>
@@ -94,46 +93,44 @@ export const Header: React.FC<HeaderProps> = ({
             <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xs sm:text-base font-bold text-slate-900 leading-tight truncate">
+            <h1 className="text-xs sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">
               ACME <span className="hidden xs:inline">Global </span>Compensation
             </h1>
-            <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block truncate">
+            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 hidden sm:block truncate">
               Multi-Currency Intelligence &amp; Transactional Audit Trail
             </p>
           </div>
         </div>
 
         {/* User Status Badge */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {user ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs">
                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="font-medium text-slate-700 max-w-[70px] xs:max-w-[110px] sm:max-w-none truncate text-[11px] sm:text-xs">
+                <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs">
                   {user.name}
                 </span>
-                <span
-                  className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold shrink-0 ${
-                    user.role === 'HR_ADMIN'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-amber-100 text-amber-700'
-                  }`}
-                >
-                  {user.role}
-                </span>
               </div>
+
+              {/* Theme Toggle Button (before logout) */}
+              <ThemeToggle />
+
               <button
                 onClick={onLogout}
                 disabled={isLoading}
                 title="Sign out"
                 aria-label="Sign out"
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors shrink-0"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <span className="text-xs text-slate-400 italic">Not signed in</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 dark:text-slate-500 italic">Not signed in</span>
+              <ThemeToggle />
+            </div>
           )}
         </div>
       </div>

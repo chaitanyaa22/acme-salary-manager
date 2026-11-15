@@ -20,6 +20,7 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
+    maxAge: 86400, // Cache preflight OPTIONS responses for up to 24h
   });
 
   // Global API Prefix with Swagger UI routes excluded

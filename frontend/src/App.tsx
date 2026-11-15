@@ -213,7 +213,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-150">
       {/* Sticky Top Header with 1-Click Role Switcher */}
       <Header
         user={currentUser}
@@ -227,7 +227,7 @@ export function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Global Error Banner */}
         {globalError && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-xs text-rose-800">
+          <div className="p-4 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl flex items-center justify-between text-xs text-rose-800 dark:text-rose-200">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
               <span>{globalError}</span>
@@ -238,7 +238,7 @@ export function App() {
                 loadEmployees();
                 loadAnalytics();
               }}
-              className="inline-flex items-center gap-1 font-semibold text-rose-700 hover:text-rose-900"
+              className="inline-flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Retry</span>
@@ -249,7 +249,7 @@ export function App() {
         {authLoading && !currentUser ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            <p className="text-xs font-medium text-slate-500">Checking credentials...</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Checking credentials...</p>
           </div>
         ) : !currentUser ? (
           <LoginForm onLogin={handleCustomLogin} isLoading={authLoading} />
@@ -259,17 +259,17 @@ export function App() {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Compensation Intelligence</h2>
-                  <p className="text-xs text-slate-500">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Compensation Intelligence</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Real-time aggregated metrics normalized to USD across all operating territories.
                   </p>
                 </div>
                 <button
                   onClick={loadAnalytics}
                   disabled={analyticsLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg shadow-xs transition-colors"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 ${analyticsLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh Analytics</span>
                 </button>
               </div>
@@ -286,8 +286,8 @@ export function App() {
             {/* Section 2: 10,000-Row Employee Directory */}
             <section>
               <div className="mb-4">
-                <h2 className="text-lg font-bold text-slate-900">Employee Directory</h2>
-                <p className="text-xs text-slate-500">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Employee Directory</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Filtered server-side queries over 10,000 employee records with transactional salary audit trails.
                 </p>
               </div>
